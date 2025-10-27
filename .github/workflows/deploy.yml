@@ -1,7 +1,7 @@
 name: Deploy to Azure VM
 
 on:
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -11,21 +11,32 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Copy project files to VM
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Build Go binary
+        run: |
+          go mod tidy
+          go build -o javanese-chess cmd/server/main.go
+
+      - name: Copy binary + Dockerfile to VM
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "."
+          source: "javanese-chess,Dockerfile"
           target: "~/javanese-chess-be"
 
-      - name: Build and run container on VM
+      - name: Deploy container on VM
         uses: appleboy/ssh-action@v1.1.0
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 15m
           script: |
             cd ~/javanese-chess-be
             docker stop javanese-chess || true
