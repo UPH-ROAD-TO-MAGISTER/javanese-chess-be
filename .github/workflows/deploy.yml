@@ -1,7 +1,7 @@
-name: Deploy to Azure VM
+name: Deploy to Azure VM (Direct Docker)
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:   # trigger manually
 
 jobs:
   deploy:
@@ -14,35 +14,33 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: "1.23"
 
       - name: Build Go binary
         run: |
           go mod tidy
           GOOS=linux GOARCH=amd64 go build -o javanese-chess cmd/server/main.go
 
-      - name: Upload binary to VM
+      - name: Upload files to VM
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "javanese-chess"
-          target: "~/javanese-chess"
+          source: "javanese-chess,Dockerfile"
+          target: "~/javanese-chess-be"
 
-      - name: Restart service on VM
+      - name: Deploy container on VM
         uses: appleboy/ssh-action@v1.1.0
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script_stop: true
-          timeout: 60s
           command_timeout: 15m
           script: |
-            pkill -f javanese-chess || true
-            chmod +x ~/javanese-chess
-            nohup ~/javanese-chess > ~/javanese-chess.log 2>&1 &
-            sleep 2
-            echo "✅ Javanese Chess restarted successfully"
-            exit 0
+            cd ~/javanese-chess-be
+            docker stop javanese-chess || true
+            docker rm javanese-chess || true
+            docker build -t javanese-chess-be .
+            docker run -d -p 8080:8080 --restart=always --name javanese-chess javanese-chess-be
+            echo "✅ Deployment complete"
