@@ -1,0 +1,34 @@
+name: Deploy to Azure VM
+
+on:
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Copy project files to VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "."
+          target: "~/javanese-chess-be"
+
+      - name: Build and run container on VM
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/javanese-chess-be
+            docker stop javanese-chess || true
+            docker rm javanese-chess || true
+            docker build -t javanese-chess-be .
+            docker run -d -p 8080:8080 --name javanese-chess javanese-chess-be
