@@ -54,7 +54,7 @@ definitions:
       roomCode:
         type: string
     type: object
-host: localhost:8080
+host: http://98.70.41.170:8080
 info:
   contact:
     email: backend@yourcompany.com

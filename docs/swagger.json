@@ -9,7 +9,7 @@
         },
         "version": "1.0"
     },
-    "host": "localhost:8080",
+    "host": "http://98.70.41.170:8080",
     "basePath": "/",
     "paths": {
         "/config/weights": {
