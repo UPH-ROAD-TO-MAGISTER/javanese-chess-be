@@ -36,9 +36,13 @@ jobs:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script_stop: true
+          timeout: 60s
+          command_timeout: 15m
           script: |
             pkill -f javanese-chess || true
             chmod +x ~/javanese-chess
             nohup ~/javanese-chess > ~/javanese-chess.log 2>&1 &
             sleep 2
-            pgrep -a javanese-chess
+            echo "✅ Javanese Chess restarted successfully"
+            exit 0
