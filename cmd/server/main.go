@@ -12,6 +12,7 @@ import (
 	// swagger packages
 	_ "javanese-chess/docs"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -29,6 +30,16 @@ func main() {
 	mem := store.NewMemoryStore()
 	rm := room.NewManager(mem, cfg)
 	r := httpapi.NewRouter(rm, cfg)
+
+	r.Use(cors.Default())
+
+	// Alternatively, to specify allowed origins or other rules:
+	// r.Use(cors.New(cors.Config{
+	//     AllowOrigins:     []string{"https://example.com", "http://localhost:8080"},
+	//     AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+	//     AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+	//     AllowCredentials: true,
+	// }))
 
 	// Swagger route
 	r.GET("/", func(c *gin.Context) {
