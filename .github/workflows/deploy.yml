@@ -19,27 +19,26 @@ jobs:
       - name: Build Go binary
         run: |
           go mod tidy
-          go build -o javanese-chess cmd/server/main.go
+          GOOS=linux GOARCH=amd64 go build -o javanese-chess cmd/server/main.go
 
-      - name: Copy binary + Dockerfile to VM
+      - name: Upload binary to VM
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "javanese-chess,Dockerfile"
-          target: "~/javanese-chess-be"
+          source: "javanese-chess"
+          target: "~/javanese-chess"
 
-      - name: Deploy container on VM
+      - name: Restart service on VM
         uses: appleboy/ssh-action@v1.1.0
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 15m
           script: |
-            cd ~/javanese-chess-be
-            docker stop javanese-chess || true
-            docker rm javanese-chess || true
-            docker build -t javanese-chess-be .
-            docker run -d -p 8080:8080 --name javanese-chess javanese-chess-be
+            pkill -f javanese-chess || true
+            chmod +x ~/javanese-chess
+            nohup ~/javanese-chess > ~/javanese-chess.log 2>&1 &
+            sleep 2
+            pgrep -a javanese-chess
