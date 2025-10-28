@@ -375,7 +375,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "98.70.41.170:8080",
+	Host:             "98.70.41.170:9000",
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Javanese Chess Bot API",

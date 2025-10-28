@@ -42,5 +42,5 @@ jobs:
             docker stop javanese-chess || true
             docker rm javanese-chess || true
             docker build -t javanese-chess-be .
-            docker run -d -p 8080:8080 --restart=always --name javanese-chess javanese-chess-be
+            docker run -d -p 9000:9000 --restart=always --name javanese-chess javanese-chess-be
             echo "✅ Deployment complete"

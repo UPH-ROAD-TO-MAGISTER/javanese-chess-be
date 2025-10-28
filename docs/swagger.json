@@ -9,7 +9,7 @@
         },
         "version": "1.0"
     },
-    "host": "98.70.41.170:8080",
+    "host": "98.70.41.170:9000",
     "basePath": "/",
     "paths": {
         "/config/weights": {

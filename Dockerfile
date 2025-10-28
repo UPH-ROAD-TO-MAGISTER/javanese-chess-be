@@ -8,7 +8,7 @@ WORKDIR /app
 COPY javanese-chess .
 
 # Expose the API port
-EXPOSE 8080
+EXPOSE 9000
 
 # Run the binary directly (no shell, no OS bloat)
 ENTRYPOINT ["/app/javanese-chess"]

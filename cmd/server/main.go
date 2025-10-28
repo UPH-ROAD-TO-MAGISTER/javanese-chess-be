@@ -23,7 +23,7 @@ import (
 // @description REST API for heuristic-based chess-like bot (Go + Gin)
 // @contact.name Backend Team
 // @contact.email backend@yourcompany.com
-// @host 98.70.41.170:8080
+// @host 98.70.41.170:9000
 // @BasePath /
 func main() {
 	cfg := config.Load()
@@ -49,7 +49,7 @@ func main() {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	addr := os.Getenv("HTTP_ADDR")
 	if addr == "" {
-		addr = ":8080"
+		addr = ":9000"
 	}
 	log.Printf("listening on %s", addr)
 	if err := r.Run(addr); err != nil {
