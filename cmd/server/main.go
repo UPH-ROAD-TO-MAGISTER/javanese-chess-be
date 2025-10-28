@@ -34,12 +34,12 @@ func main() {
 	r.Use(cors.Default())
 
 	// Alternatively, to specify allowed origins or other rules:
-	// r.Use(cors.New(cors.Config{
-	//     AllowOrigins:     []string{"https://example.com", "http://localhost:8080"},
-	//     AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
-	//     AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-	//     AllowCredentials: true,
-	// }))
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://98.70.41.170:5173", "http://localhost:5173"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		AllowCredentials: true,
+	}))
 
 	// Swagger route
 	r.GET("/", func(c *gin.Context) {
