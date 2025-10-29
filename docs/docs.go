@@ -18,15 +18,16 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/config/weights": {
+        "/config/weights/default": {
             "get": {
+                "description": "Returns the default heuristic weights based on research paper (Section 2.4)",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Config"
+                    "config"
                 ],
-                "summary": "Get heuristic configuration",
+                "summary": "Get default heuristic weights",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -36,8 +37,57 @@ const docTemplate = `{
                         }
                     }
                 }
+            }
+        },
+        "/config/weights/room": {
+            "get": {
+                "description": "Returns the heuristic weights configured for a specific room",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "config"
+                ],
+                "summary": "Get room heuristic weights",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Room Code",
+                        "name": "roomCode",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
             },
             "post": {
+                "description": "Updates the heuristic weights for all bots in a specific room. Weights must be non-negative.",
                 "consumes": [
                     "application/json"
                 ],
@@ -45,18 +95,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Config"
+                    "config"
                 ],
-                "summary": "Update heuristic configuration",
+                "summary": "Update room heuristic weights",
                 "parameters": [
                     {
-                        "description": "New heuristic weights",
+                        "description": "Update Request",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/http.UpdateRoomWeightsRequest"
                         }
                     }
                 ],
@@ -66,6 +115,75 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/config/weights/room/reset": {
+            "post": {
+                "description": "Resets a room's heuristic weights to the global defaults from research paper",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "config"
+                ],
+                "summary": "Reset room weights to default",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Room Code",
+                        "name": "roomCode",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -285,6 +403,35 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "config.HeuristicWeights": {
+            "type": "object",
+            "properties": {
+                "w_block_path": {
+                    "description": "W₄: Blocking enemy paths (cutting opponent lines)",
+                    "type": "integer"
+                },
+                "w_build_alignment": {
+                    "description": "W₅: Building own alignments (2 or 3 in a row)",
+                    "type": "integer"
+                },
+                "w_card_cost": {
+                    "description": "W₆: Card value management (resource efficiency)",
+                    "type": "integer"
+                },
+                "w_replace_value": {
+                    "description": "W₃: Overwriting opponent cards (strategic replacement)",
+                    "type": "integer"
+                },
+                "w_threat": {
+                    "description": "W₂: Blocking opponent's immediate threat (3-in-a-row)",
+                    "type": "integer"
+                },
+                "w_win": {
+                    "description": "W₁: Winning move detection (4-in-a-row)",
+                    "type": "integer"
+                }
+            }
+        },
         "http.CreateRoomRequest": {
             "type": "object",
             "properties": {
@@ -368,6 +515,21 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "http.UpdateRoomWeightsRequest": {
+            "type": "object",
+            "required": [
+                "room_code",
+                "weights"
+            ],
+            "properties": {
+                "room_code": {
+                    "type": "string"
+                },
+                "weights": {
+                    "$ref": "#/definitions/config.HeuristicWeights"
+                }
+            }
         }
     }
 }`
@@ -375,7 +537,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "98.70.41.170:9000",
+	Host:             "localhost:9000",
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Javanese Chess Bot API",

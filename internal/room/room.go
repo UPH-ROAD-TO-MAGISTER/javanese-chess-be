@@ -19,15 +19,16 @@ type Player struct {
 }
 
 type Room struct {
-	ID        string        `json:"id"`
-	Code      string        `json:"code"`
-	Board     game.Board    `json:"board"`
-	Players   []Player      `json:"players"`
-	TurnIdx   int           `json:"turnIdx"`
-	WinnerID  *string       `json:"winnerId,omitempty"`
-	Draw      bool          `json:"draw"`
-	CreatedAt time.Time     `json:"createdAt"`
-	Cfg       config.Config `json:"-"`
+	ID         string             `json:"id"`
+	Code       string             `json:"code"`
+	Board      game.Board         `json:"board"`
+	Players    []Player           `json:"players"`
+	TurnIdx    int                `json:"turnIdx"`
+	WinnerID   *string            `json:"winnerId,omitempty"`
+	Draw       bool               `json:"draw"`
+	CreatedAt  time.Time          `json:"createdAt"`
+	Cfg        config.Config      `json:"-"`
+	RoomConfig *config.RoomConfig `json:"roomConfig,omitempty"`
 }
 
 type Store interface {
@@ -47,12 +48,13 @@ func NewManager(s Store, cfg config.Config) *Manager {
 func (m *Manager) CreateRoom(creatorName string) *Room {
 	code := randCode(6)
 	r := &Room{
-		ID:        uuid.NewString(),
-		Code:      code,
-		Board:     game.NewBoard(m.cfg.Weights.BoardSize),
-		TurnIdx:   0,
-		CreatedAt: time.Now(),
-		Cfg:       m.cfg,
+		ID:         uuid.NewString(),
+		Code:       code,
+		Board:      game.NewBoard(m.cfg.BoardSize),
+		TurnIdx:    0,
+		CreatedAt:  time.Now(),
+		Cfg:        m.cfg,
+		RoomConfig: config.NewRoomConfig(code),
 	}
 	game.UpdateVState(&r.Board)
 	r.Players = append(r.Players, Player{
@@ -133,10 +135,17 @@ func (m *Manager) BotMove(r *Room, botID string) (mv game.Move, err error) {
 	if len(cands) == 0 {
 		return mv, errors.New("no legal moves")
 	}
+
+	// Get room-specific weights, or use defaults
+	weights := r.Cfg.DefaultWeights
+	if r.RoomConfig != nil {
+		weights = r.RoomConfig.GetWeights()
+	}
+
 	best := cands[0]
-	bestScore := game.HeuristicScore(r.Board, best, r.Cfg)
+	bestScore := game.HeuristicScore(r.Board, best, cp.Hand, weights)
 	for _, c := range cands[1:] {
-		if s := game.HeuristicScore(r.Board, c, r.Cfg); s > bestScore {
+		if s := game.HeuristicScore(r.Board, c, cp.Hand, weights); s > bestScore {
 			best = c
 			bestScore = s
 		}

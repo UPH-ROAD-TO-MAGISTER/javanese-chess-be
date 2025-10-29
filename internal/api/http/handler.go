@@ -2,7 +2,6 @@ package http
 
 import (
 	"javanese-chess/internal/api/ws"
-	"javanese-chess/internal/config"
 	"javanese-chess/internal/game"
 	"javanese-chess/internal/room"
 	"net/http"
@@ -243,36 +242,5 @@ func MoveBotHandler(rm *room.Manager, hub *ws.Hub) gin.HandlerFunc {
 			"rank":      rm.Rank(rx),
 			"room":      rx,
 		})
-	}
-}
-
-// @Summary Get heuristic configuration
-// @Tags Config
-// @Produce json
-// @Success 200 {object} map[string]interface{}
-// @Router /config/weights [get]
-func GetConfigHandler(cfg config.Config) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.JSON(http.StatusOK, cfg.Weights)
-	}
-}
-
-// @Summary Update heuristic configuration
-// @Tags Config
-// @Accept json
-// @Produce json
-// @Param request body map[string]interface{} true "New heuristic weights"
-// @Success 200 {object} map[string]interface{}
-// @Router /config/weights [post]
-func UpdateConfigHandler(cfg config.Config, hub *ws.Hub) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var w config.Weights
-		if err := c.BindJSON(&w); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid weights"})
-			return
-		}
-		cfg.Weights = w
-		hub.Broadcast("ALL", "config-updated", w)
-		c.JSON(http.StatusOK, gin.H{"ok": true, "weights": w})
 	}
 }
