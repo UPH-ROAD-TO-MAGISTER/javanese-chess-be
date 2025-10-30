@@ -19,7 +19,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "config"
+                    "Config"
                 ],
                 "summary": "Get default heuristic weights",
                 "responses": {
@@ -40,7 +40,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "config"
+                    "Config"
                 ],
                 "summary": "Get room heuristic weights",
                 "parameters": [
@@ -59,24 +59,6 @@
                             "type": "object",
                             "additionalProperties": true
                         }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
                     }
                 }
             },
@@ -89,7 +71,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "config"
+                    "Config"
                 ],
                 "summary": "Update room heuristic weights",
                 "parameters": [
@@ -110,24 +92,6 @@
                             "type": "object",
                             "additionalProperties": true
                         }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
                     }
                 }
             }
@@ -142,7 +106,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "config"
+                    "Config"
                 ],
                 "summary": "Reset room weights to default",
                 "parameters": [
@@ -160,24 +124,6 @@
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
                         }
                     }
                 }

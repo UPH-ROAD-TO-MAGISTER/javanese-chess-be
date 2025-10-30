@@ -108,7 +108,7 @@ paths:
             type: object
       summary: Get default heuristic weights
       tags:
-      - config
+      - Config
   /config/weights/room:
     get:
       description: Returns the heuristic weights configured for a specific room
@@ -126,21 +126,9 @@ paths:
           schema:
             additionalProperties: true
             type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
       summary: Get room heuristic weights
       tags:
-      - config
+      - Config
     post:
       consumes:
       - application/json
@@ -161,21 +149,9 @@ paths:
           schema:
             additionalProperties: true
             type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
       summary: Update room heuristic weights
       tags:
-      - config
+      - Config
   /config/weights/room/reset:
     post:
       consumes:
@@ -196,21 +172,9 @@ paths:
           schema:
             additionalProperties: true
             type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
       summary: Reset room weights to default
       tags:
-      - config
+      - Config
   /create-room:
     post:
       consumes:

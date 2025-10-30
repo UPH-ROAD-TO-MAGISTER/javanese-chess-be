@@ -25,7 +25,7 @@ func NewConfigHandler(s room.Store, hub *ws.Hub) *ConfigHandler {
 // GetDefaultWeightsHandler returns the global default weights
 // @Summary Get default heuristic weights
 // @Description Returns the default heuristic weights based on research paper (Section 2.4)
-// @Tags config
+// @Tags Config
 // @Produce json
 // @Success 200 {object} map[string]interface{}
 // @Router /config/weights/default [get]
@@ -49,9 +49,10 @@ func (h *ConfigHandler) GetDefaultWeightsHandler(c *gin.Context) {
 // GetRoomWeightsHandler returns the weights for a specific room
 // @Summary Get room heuristic weights
 // @Description Returns the heuristic weights configured for a specific room
-// @Tags config
+// @Tags Config
 // @Produce json
 // @Param roomCode query string true "Room Code"
+// @Success 200 {object} map[string]interface{}
 // @Router /config/weights/room [get]
 func (h *ConfigHandler) GetRoomWeightsHandler(c *gin.Context) {
 	roomCode := c.Query("roomCode")
@@ -94,11 +95,11 @@ type UpdateRoomWeightsRequest struct {
 // UpdateRoomWeightsHandler updates weights for a specific room
 // @Summary Update room heuristic weights
 // @Description Updates the heuristic weights for all bots in a specific room. Weights must be non-negative.
-// @Tags config
+// @Tags Config
 // @Accept json
 // @Produce json
 // @Param request body UpdateRoomWeightsRequest true "Update Request"
-// @Success 200 {object} map[string]interface{}]
+// @Success 200 {object} map[string]interface{}
 // @Router /config/weights/room [post]
 func (h *ConfigHandler) UpdateRoomWeightsHandler(c *gin.Context) {
 	var req UpdateRoomWeightsRequest
@@ -148,7 +149,7 @@ func (h *ConfigHandler) UpdateRoomWeightsHandler(c *gin.Context) {
 // ResetRoomWeightsHandler resets a room's weights to default
 // @Summary Reset room weights to default
 // @Description Resets a room's heuristic weights to the global defaults from research paper
-// @Tags config
+// @Tags Config
 // @Accept json
 // @Produce json
 // @Param roomCode query string true "Room Code"
