@@ -7,7 +7,9 @@ import (
 	"javanese-chess/internal/config"
 	"javanese-chess/internal/game"
 	"javanese-chess/internal/room"
+	"math/rand"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -91,6 +93,18 @@ func PlayHandler(rm *room.Manager, hub *ws.Hub) gin.HandlerFunc {
 		turnOrder := []string{}
 		playersOut := []map[string]interface{}{}
 
+		// assign colors from enum (red, green, blue, purple) shuffled across players/bots
+		colors := []string{"red", "green", "blue", "purple"}
+		totalPlayers := len(rx.Players)
+		colorPool := make([]string, totalPlayers)
+		for i := 0; i < totalPlayers; i++ {
+			colorPool[i] = colors[i%len(colors)]
+		}
+		r := rand.New(rand.NewSource(time.Now().UnixNano()))
+		if totalPlayers > 1 {
+			r.Shuffle(len(colorPool), func(i, j int) { colorPool[i], colorPool[j] = colorPool[j], colorPool[i] })
+		}
+
 		for pi, p := range rx.Players {
 			// marshal player to generic map to avoid compile-time field assumptions
 			b, _ := json.Marshal(p)
@@ -116,14 +130,20 @@ func PlayHandler(rm *room.Manager, hub *ws.Hub) gin.HandlerFunc {
 			}
 			turnOrder = append(turnOrder, playerID)
 
+			// assign shuffled color (override any existing color)
+			color := ""
+			if pi < len(colorPool) {
+				color = colorPool[pi]
+				pm["color"] = color
+			} else if v, ok := pm["color"].(string); ok {
+				color = v
+			}
+
 			name := ""
 			if v, ok := pm["name"].(string); ok {
 				name = v
 			}
-			color := ""
-			if v, ok := pm["color"].(string); ok {
-				color = v
-			}
+
 			isBot := false
 			if v, ok := pm["is_bot"].(bool); ok {
 				isBot = v
@@ -174,6 +194,14 @@ func PlayHandler(rm *room.Manager, hub *ws.Hub) gin.HandlerFunc {
 			}
 			playersOut = append(playersOut, playerMap)
 		}
+
+		// Randomize turnOrder and players order so player turn is random
+		ids := make([]string, len(turnOrder))
+		copy(ids, turnOrder)
+		if len(ids) > 1 {
+			r.Shuffle(len(ids), func(i, j int) { ids[i], ids[j] = ids[j], ids[i] })
+		}
+		turnOrder = ids
 
 		// board as-is (will marshal to JSON)
 		boardOut := rx.Board
