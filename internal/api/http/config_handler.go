@@ -34,15 +34,6 @@ func (h *ConfigHandler) GetDefaultWeightsHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"weights": weights,
-		"description": map[string]string{
-			"w_win":             "W₁: Immediate winning move (4-in-a-row) - Default: 10000",
-			"w_threat":          "W₂: Blocking opponent's 3-in-a-row threat - Default: 200",
-			"w_replace_value":   "W₃: Overwriting opponent cards - Default: 125",
-			"w_block_path":      "W₄: Blocking enemy paths - Default: 70",
-			"w_build_alignment": "W₅: Building own 2/3-in-a-row - Default: 50",
-			"w_card_cost":       "W₆: Card value management - Default: 1",
-		},
-		"formula": "H(s,a) = W₁·f_win + W₂·f_threat_block + W₃·f_replace_value + W₄·f_block_path + W₅·f_build_alignment + W₆·f_card_cost",
 	})
 }
 
@@ -83,7 +74,6 @@ func (h *ConfigHandler) GetRoomWeightsHandler(c *gin.Context) {
 		"room_code":     roomCode,
 		"weights":       weights,
 		"is_customized": isCustomized,
-		"formula":       "H(s,a) = W₁·f_win + W₂·f_threat_block + W₃·f_replace_value + W₄·f_block_path + W₅·f_build_alignment + W₆·f_card_cost",
 	})
 }
 

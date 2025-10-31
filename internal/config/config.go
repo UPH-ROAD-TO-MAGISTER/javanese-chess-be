@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"reflect"
 	"sync"
 )
 
@@ -36,6 +37,19 @@ const (
 	// DefaultWCardCost - W₆: Card value management (resource efficiency)
 	// Lowest priority - tie-breaker for equal positions
 	DefaultWCardCost = 1
+
+	// Additional heuristic values from the provided table
+	DefaultLegalMoveValue    = 30
+	DefaultReplaceWhenThreat = 200
+	DefaultReplacePotential  = 125
+	DefaultReplacePosMiddle  = 75
+	DefaultReplacePosSide    = 50
+	DefaultBlockWhenThreat   = 100
+	DefaultBlockPotential    = 70
+	DefaultBuildAlignment2   = 50
+	DefaultBuildAlignment3   = 100
+	DefaultPlaySmallestCard  = 60
+	DefaultKeepNearCard      = 60
 )
 
 // Config holds all configuration values
@@ -67,6 +81,35 @@ type HeuristicWeights struct {
 
 	// W₆: Card value management (resource efficiency)
 	WCardCost int `json:"w_card_cost"`
+
+	// Legal move value
+	LegalMove int `json:"legal_move"`
+
+	// Replace values when blocking an immediate threat (card 1..9 -> indices 0..8)
+	ReplaceValuesThreat map[int]int `json:"replace_values_threat"`
+
+	// Replace values for potential threats (prioritize small cards: card1..9)
+	ReplaceValuesPotential map[int]int `json:"replace_values_potential"`
+
+	// Replace weights (contextual)
+	ReplaceWhenThreat int `json:"replace_when_threat"`
+	ReplacePotential  int `json:"replace_potential"`
+
+	// Position modifiers for replacement
+	ReplacePosMiddle int `json:"replace_pos_middle"`
+	ReplacePosSide   int `json:"replace_pos_side"`
+
+	// Blocking weights
+	BlockWhenThreat int `json:"block_when_threat"`
+	BlockPotential  int `json:"block_potential"`
+
+	// Build alignment specific weights
+	BuildAlignment2 int `json:"build_alignment_2"`
+	BuildAlignment3 int `json:"build_alignment_3"`
+
+	// Smallest-card and proximity preferences
+	PlaySmallestCard int `json:"play_smallest_card"`
+	KeepNearCard     int `json:"keep_near_card"`
 }
 
 // RoomConfig holds configuration for a specific room
@@ -92,7 +135,29 @@ func Load() *Config {
 				WReplaceValue:   DefaultWReplaceValue,
 				WBlockPath:      DefaultWBlockPath,
 				WBuildAlignment: DefaultWBuildAlignment,
-				WCardCost:       DefaultWCardCost,
+				WCardCost:       DefaultWCardCost, // Additional defaults per provided heuristic table
+				LegalMove:       DefaultLegalMoveValue,
+
+				// Replace when immediate threat (card values 1..9)
+				ReplaceValuesThreat: map[int]int{1: 20, 2: 30, 3: 40, 4: 50, 5: 60, 6: 70, 7: 80, 8: 90, 9: 100},
+
+				// Replace values for potential (prefer small cards: 1..9 -> 100..20)
+				ReplaceValuesPotential: map[int]int{1: 100, 2: 90, 3: 80, 4: 70, 5: 60, 6: 50, 7: 40, 8: 30, 9: 20},
+
+				ReplaceWhenThreat: DefaultReplaceWhenThreat,
+				ReplacePotential:  DefaultReplacePotential,
+
+				ReplacePosMiddle: DefaultReplacePosMiddle,
+				ReplacePosSide:   DefaultReplacePosSide,
+
+				BlockWhenThreat: DefaultBlockWhenThreat,
+				BlockPotential:  DefaultBlockPotential,
+
+				BuildAlignment2: DefaultBuildAlignment2,
+				BuildAlignment3: DefaultBuildAlignment3,
+
+				PlaySmallestCard: DefaultPlaySmallestCard,
+				KeepNearCard:     DefaultKeepNearCard,
 			},
 		}
 	})
@@ -135,18 +200,32 @@ func (rc *RoomConfig) IsCustomized() bool {
 	defer rc.mu.RUnlock()
 
 	defaults := Get().DefaultWeights
-	return rc.Weights != defaults
+	return !reflect.DeepEqual(rc.Weights, defaults)
 }
 
 // ValidateWeights checks if weights are within reasonable ranges
 func (w *HeuristicWeights) ValidateWeights() bool {
 	// All weights should be non-negative
-	return w.WWin >= 0 &&
-		w.WThreat >= 0 &&
-		w.WReplaceValue >= 0 &&
-		w.WBlockPath >= 0 &&
-		w.WBuildAlignment >= 0 &&
-		w.WCardCost >= 0
+	if w.WWin < 0 || w.WThreat < 0 || w.WReplaceValue < 0 || w.WBlockPath < 0 ||
+		w.WBuildAlignment < 0 || w.WCardCost < 0 || w.LegalMove < 0 ||
+		w.ReplaceWhenThreat < 0 || w.ReplacePotential < 0 ||
+		w.ReplacePosMiddle < 0 || w.ReplacePosSide < 0 ||
+		w.BlockWhenThreat < 0 || w.BlockPotential < 0 ||
+		w.BuildAlignment2 < 0 || w.BuildAlignment3 < 0 ||
+		w.PlaySmallestCard < 0 || w.KeepNearCard < 0 {
+		return false
+	}
+	for _, v := range w.ReplaceValuesThreat {
+		if v < 0 {
+			return false
+		}
+	}
+	for _, v := range w.ReplaceValuesPotential {
+		if v < 0 {
+			return false
+		}
+	}
+	return true
 }
 
 // getHTTPAddr returns the HTTP address from environment or default
