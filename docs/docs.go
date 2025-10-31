@@ -242,7 +242,7 @@ const docTemplate = `{
         },
         "/play": {
             "post": {
-                "description": "Initialize bots to start the game (default 1 bot if not specified)",
+                "description": "Initialize room (create if missing), add bots and apply provided heuristic weights in one request",
                 "consumes": [
                     "application/json"
                 ],
@@ -252,7 +252,7 @@ const docTemplate = `{
                 "tags": [
                     "Room"
                 ],
-                "summary": "Add bots to a room",
+                "summary": "Add bots to a room or create room and apply config",
                 "parameters": [
                     {
                         "description": "Room info",
@@ -352,6 +352,59 @@ const docTemplate = `{
         "config.HeuristicWeights": {
             "type": "object",
             "properties": {
+                "block_potential": {
+                    "type": "integer"
+                },
+                "block_when_threat": {
+                    "description": "Blocking weights",
+                    "type": "integer"
+                },
+                "build_alignment_2": {
+                    "description": "Build alignment specific weights",
+                    "type": "integer"
+                },
+                "build_alignment_3": {
+                    "type": "integer"
+                },
+                "keep_near_card": {
+                    "type": "integer"
+                },
+                "legal_move": {
+                    "description": "Legal move value",
+                    "type": "integer"
+                },
+                "play_smallest_card": {
+                    "description": "Smallest-card and proximity preferences",
+                    "type": "integer"
+                },
+                "replace_pos_middle": {
+                    "description": "Position modifiers for replacement",
+                    "type": "integer"
+                },
+                "replace_pos_side": {
+                    "type": "integer"
+                },
+                "replace_potential": {
+                    "type": "integer"
+                },
+                "replace_values_potential": {
+                    "description": "Replace values for potential threats (prioritize small cards: card1..9)",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "replace_values_threat": {
+                    "description": "Replace values when blocking an immediate threat (card 1..9 -\u003e indices 0..8)",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "replace_when_threat": {
+                    "description": "Replace weights (contextual)",
+                    "type": "integer"
+                },
                 "w_block_path": {
                     "description": "W₄: Blocking enemy paths (cutting opponent lines)",
                     "type": "integer"
@@ -381,7 +434,7 @@ const docTemplate = `{
         "http.CreateRoomRequest": {
             "type": "object",
             "properties": {
-                "playerName": {
+                "player_name": {
                     "type": "string"
                 }
             }
@@ -389,16 +442,16 @@ const docTemplate = `{
         "http.MoveBotRequest": {
             "type": "object",
             "properties": {
-                "botId": {
+                "bot_id": {
                     "type": "string"
                 },
-                "holdCards": {
+                "hold_cards": {
                     "type": "array",
                     "items": {
                         "type": "integer"
                     }
                 },
-                "roomCode": {
+                "room_code": {
                     "type": "string"
                 }
             }
@@ -406,10 +459,10 @@ const docTemplate = `{
         "http.MoveRequest": {
             "type": "object",
             "properties": {
-                "playerId": {
+                "player_id": {
                     "type": "string"
                 },
-                "roomCode": {
+                "room_code": {
                     "type": "string"
                 },
                 "value": {
@@ -426,11 +479,20 @@ const docTemplate = `{
         "http.PlayRequest": {
             "type": "object",
             "properties": {
-                "bots": {
+                "number_bot": {
                     "type": "integer"
                 },
-                "roomCode": {
+                "number_player": {
+                    "type": "integer"
+                },
+                "player_name": {
                     "type": "string"
+                },
+                "room_id": {
+                    "type": "string"
+                },
+                "weights": {
+                    "$ref": "#/definitions/config.HeuristicWeights"
                 }
             }
         },
@@ -443,7 +505,7 @@ const docTemplate = `{
                         "type": "integer"
                     }
                 },
-                "playerId": {
+                "player_id": {
                     "type": "string"
                 }
             }
@@ -457,7 +519,7 @@ const docTemplate = `{
                         "$ref": "#/definitions/http.PlayerHand"
                     }
                 },
-                "roomCode": {
+                "room_code": {
                     "type": "string"
                 }
             }

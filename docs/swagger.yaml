@@ -2,6 +2,46 @@ basePath: /
 definitions:
   config.HeuristicWeights:
     properties:
+      block_potential:
+        type: integer
+      block_when_threat:
+        description: Blocking weights
+        type: integer
+      build_alignment_2:
+        description: Build alignment specific weights
+        type: integer
+      build_alignment_3:
+        type: integer
+      keep_near_card:
+        type: integer
+      legal_move:
+        description: Legal move value
+        type: integer
+      play_smallest_card:
+        description: Smallest-card and proximity preferences
+        type: integer
+      replace_pos_middle:
+        description: Position modifiers for replacement
+        type: integer
+      replace_pos_side:
+        type: integer
+      replace_potential:
+        type: integer
+      replace_values_potential:
+        additionalProperties:
+          type: integer
+        description: 'Replace values for potential threats (prioritize small cards:
+          card1..9)'
+        type: object
+      replace_values_threat:
+        additionalProperties:
+          type: integer
+        description: Replace values when blocking an immediate threat (card 1..9 ->
+          indices 0..8)
+        type: object
+      replace_when_threat:
+        description: Replace weights (contextual)
+        type: integer
       w_block_path:
         description: 'W₄: Blocking enemy paths (cutting opponent lines)'
         type: integer
@@ -23,25 +63,25 @@ definitions:
     type: object
   http.CreateRoomRequest:
     properties:
-      playerName:
+      player_name:
         type: string
     type: object
   http.MoveBotRequest:
     properties:
-      botId:
+      bot_id:
         type: string
-      holdCards:
+      hold_cards:
         items:
           type: integer
         type: array
-      roomCode:
+      room_code:
         type: string
     type: object
   http.MoveRequest:
     properties:
-      playerId:
+      player_id:
         type: string
-      roomCode:
+      room_code:
         type: string
       value:
         type: integer
@@ -52,10 +92,16 @@ definitions:
     type: object
   http.PlayRequest:
     properties:
-      bots:
+      number_bot:
         type: integer
-      roomCode:
+      number_player:
+        type: integer
+      player_name:
         type: string
+      room_id:
+        type: string
+      weights:
+        $ref: '#/definitions/config.HeuristicWeights'
     type: object
   http.PlayerHand:
     properties:
@@ -63,7 +109,7 @@ definitions:
         items:
           type: integer
         type: array
-      playerId:
+      player_id:
         type: string
     type: object
   http.SetHandsRequest:
@@ -72,7 +118,7 @@ definitions:
         items:
           $ref: '#/definitions/http.PlayerHand'
         type: array
-      roomCode:
+      room_code:
         type: string
     type: object
   http.UpdateRoomWeightsRequest:
@@ -248,7 +294,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Initialize bots to start the game (default 1 bot if not specified)
+      description: Initialize room (create if missing), add bots and apply provided
+        heuristic weights in one request
       parameters:
       - description: Room info
         in: body
@@ -264,7 +311,7 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      summary: Add bots to a room
+      summary: Add bots to a room or create room and apply config
       tags:
       - Room
   /possible-moves:
