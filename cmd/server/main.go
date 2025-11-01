@@ -20,7 +20,6 @@ import (
 // @description REST API for heuristic-based chess-like bot (Go + Gin)
 // @contact.name Backend Team
 // @contact.email backend@yourcompany.com
-// @host localhost:9000
 // @BasePath /
 func main() {
 	cfg := config.Load()

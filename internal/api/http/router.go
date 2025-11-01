@@ -21,15 +21,7 @@ func SetupRouter(mgr *room.Manager, s room.Store, hub *ws.Hub) *gin.Engine {
 	}))
 
 	// Existing handlers (not using store directly)
-	// Room management
-	r.POST("/create-room", CreateRoomHandler(mgr))
 	r.POST("/play", PlayHandler(mgr, hub))
-
-	// Game actions
-	r.GET("/possible-moves", PossibleMovesHandler(mgr))
-	r.POST("/set-hands", SetHandsHandler(mgr, hub))
-	r.POST("/move", MoveHandler(mgr, hub))
-	r.POST("/move-bot", MoveBotHandler(mgr, hub))
 
 	// Config routes (room-based)
 	configHandler := NewConfigHandler(s, hub)
@@ -37,8 +29,6 @@ func SetupRouter(mgr *room.Manager, s room.Store, hub *ws.Hub) *gin.Engine {
 	{
 		configGroup.GET("/weights/default", configHandler.GetDefaultWeightsHandler)
 		configGroup.GET("/weights/room", configHandler.GetRoomWeightsHandler)
-		configGroup.POST("/weights/room", configHandler.UpdateRoomWeightsHandler)
-		configGroup.POST("/weights/room/reset", configHandler.ResetRoomWeightsHandler)
 	}
 
 	// WebSocket
