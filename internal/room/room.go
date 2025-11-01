@@ -68,6 +68,47 @@ func (m *Manager) CreateRoom(creatorName string) *Room {
 	return r
 }
 
+func NewRoomWithID(roomID, creatorName string) *Room {
+	if creatorName == "" {
+		creatorName = "Player"
+	}
+
+	// Use the default configuration for the room
+	defaultCfg := config.Get()
+
+	// Create a new board with the default configuration
+	board := game.NewBoard(defaultCfg.BoardSize)
+
+	r := &Room{
+		ID:         roomID,
+		Code:       roomID, // Use the provided RoomID as the Code
+		Board:      board,
+		TurnIdx:    0,
+		CreatedAt:  time.Now(),
+		Cfg:        *defaultCfg,
+		RoomConfig: config.NewRoomConfig(roomID),
+	}
+
+	// Update the board's virtual state
+	game.UpdateVState(&r.Board)
+
+	// Add the creator as the first player
+	r.Players = append(r.Players, Player{
+		ID:    uuid.NewString(),
+		Name:  creatorName,
+		IsBot: false,
+		Index: 0,
+		Hand:  []int{1, 2, 3},
+	})
+	return r
+}
+
+func (m *Manager) CreateRoomWithID(roomID, playerName string) *Room {
+	room := NewRoomWithID(roomID, playerName)
+	m.store.SaveRoom(room)
+	return room
+}
+
 func (m *Manager) AddBots(r *Room, n int) {
 	for i := 0; i < n; i++ {
 		r.Players = append(r.Players, Player{

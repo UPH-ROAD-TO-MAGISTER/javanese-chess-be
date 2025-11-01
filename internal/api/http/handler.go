@@ -33,11 +33,14 @@ func PlayHandler(rm *room.Manager, hub *ws.Hub) gin.HandlerFunc {
 			playRequest.NumberBot = 1
 		}
 
-		// Try get existing room by provided RoomID
+		// Try to get an existing room by the provided RoomID
 		var rx *room.Room
 		if playRequest.RoomID != "" {
 			if r, ok := rm.Get(playRequest.RoomID); ok {
 				rx = r
+			} else {
+				// If the room doesn't exist, create a new one with the given RoomID
+				rx = rm.CreateRoomWithID(playRequest.RoomID, playRequest.PlayerName)
 			}
 		}
 
