@@ -24,7 +24,7 @@ import (
 func main() {
 	cfg := config.Load()
 	mem := store.NewMemoryStore()
-	hub := ws.NewHub()
+	hub := ws.NewHub(room.NewManager(mem, *cfg, nil))
 	rm := room.NewManager(mem, *cfg, hub)
 	r := httpapi.SetupRouter(rm, mem, hub)
 
