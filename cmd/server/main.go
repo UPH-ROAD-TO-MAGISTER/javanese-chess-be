@@ -26,6 +26,16 @@ func main() {
 	mem := store.NewMemoryStore()
 	hub := ws.NewHub(room.NewManager(mem, *cfg, nil))
 	rm := room.NewManager(mem, *cfg, hub)
+
+	// Create the Manager first, with a nil Hub
+	rm = room.NewManager(mem, *cfg, nil)
+
+	// Create the Hub, passing the Manager
+	hub = ws.NewHub(rm)
+
+	// Set the Hub in the Manager
+	rm.SetHub(hub)
+
 	r := httpapi.SetupRouter(rm, mem, hub)
 
 	// Optional: Add root redirect to swagger

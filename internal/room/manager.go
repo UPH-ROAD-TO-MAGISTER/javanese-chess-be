@@ -6,6 +6,7 @@ import (
 	"javanese-chess/internal/config"
 	"javanese-chess/internal/game"
 	"javanese-chess/internal/shared"
+	"log"
 	"math/rand"
 	"time"
 
@@ -21,6 +22,11 @@ type Manager struct {
 
 func NewManager(s Store, cfg config.Config, hub *ws.Hub) *Manager {
 	return &Manager{store: s, cfg: cfg, hub: hub}
+}
+
+func (m *Manager) SetHub(hub *ws.Hub) {
+	log.Printf("Setting Hub in Manager: %+v", hub)
+	m.hub = hub
 }
 
 func (m *Manager) CreateRoom(creatorName string) *shared.Room {
@@ -259,6 +265,8 @@ func (m *Manager) BotMove(r *shared.Room, botID string) (shared.Move, error) {
 	if err := m.ApplyMove(r, botID, best.X, best.Y, best.Card); err != nil {
 		return shared.Move{}, err
 	}
+
+	game.UpdateVState(&r.Board)
 
 	return shared.Move{
 		X:        best.X,
