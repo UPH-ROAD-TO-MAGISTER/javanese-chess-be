@@ -29,7 +29,8 @@ type Move struct {
 type Player struct {
 	ID    string `json:"id"`
 	Name  string `json:"name"`
-	IsBot bool   `json:"is_bot"`
+	IsBot bool   `json:"isBot"`
 	Hand  []int  `json:"hand"`
 	Deck  []int  `json:"deck"`
+	Color string `json:"color"` // Added field for player color
 }

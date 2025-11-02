@@ -236,3 +236,6 @@ func getHTTPAddr() string {
 	}
 	return ":9000" // Default port
 }
+
+// DefaultPlayerColors defines the available colors for players
+var DefaultPlayerColors = []string{"red", "green", "blue", "purple"}

@@ -48,6 +48,13 @@ func (m *Manager) CreateRoom(creatorName string) *shared.Room {
 		},
 	}
 	game.UpdateVState(&r.Board)
+
+	// Define available colors
+	colors := []string{"red", "green", "blue", "purple"}
+
+	// Assign a color to the human player
+	r.Players[0].Color = colors[0]
+
 	m.store.SaveRoom(r)
 	return r
 }
@@ -115,6 +122,9 @@ func (m *Manager) CreateRoomWithID(roomID, playerName string) *shared.Room {
 }
 
 func (m *Manager) AddBots(r *shared.Room, n int) {
+	// Use the DefaultPlayerColors from the config package
+	colors := config.DefaultPlayerColors
+
 	// Ensure the human player is included in the shuffle
 	if len(r.Players) == 0 {
 		// Generate a unique deck for the human player
@@ -128,6 +138,7 @@ func (m *Manager) AddBots(r *shared.Room, n int) {
 			IsBot: false,
 			Hand:  hand,
 			Deck:  deck,
+			Color: colors[0], // Assign the first color
 		})
 	}
 
@@ -144,12 +155,25 @@ func (m *Manager) AddBots(r *shared.Room, n int) {
 			IsBot: true,
 			Hand:  hand,
 			Deck:  deck,
+			Color: colors[(len(r.Players))%len(colors)], // Assign colors in a round-robin fashion
 		})
 	}
 
+	// Ensure unique colors for up to 4 players
+	usedColors := make(map[string]bool)
+	for i := range r.Players {
+		for _, color := range colors {
+			if !usedColors[color] {
+				r.Players[i].Color = color
+				usedColors[color] = true
+				break
+			}
+		}
+	}
+
 	// Shuffle the players
-	rand.Seed(time.Now().UnixNano())
-	rand.Shuffle(len(r.Players), func(i, j int) {
+	randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
+	randGen.Shuffle(len(r.Players), func(i, j int) {
 		r.Players[i], r.Players[j] = r.Players[j], r.Players[i]
 	})
 
@@ -204,8 +228,10 @@ func (m *Manager) ApplyMove(r *shared.Room, playerID string, x, y, card int) err
 	game.UpdateVState(&r.Board)
 
 	// Draw a new card from the deck
+	var drawnCard int
 	if len(cp.Deck) > 0 {
-		cp.Hand = append(cp.Hand, cp.Deck[0])
+		drawnCard = cp.Deck[0]
+		cp.Hand = append(cp.Hand, drawnCard)
 		cp.Deck = cp.Deck[1:]
 	}
 
@@ -224,12 +250,13 @@ func (m *Manager) ApplyMove(r *shared.Room, playerID string, x, y, card int) err
 
 	// Broadcast the updated game state
 	m.hub.Broadcast(r.Code, "move", gin.H{
-		"playerID": playerID,
-		"x":        x,
-		"y":        y,
-		"card":     card,
-		"board":    r.Board,
-		"nextTurn": r.Players[r.TurnIdx].ID,
+		"playerID":  playerID,
+		"x":         x,
+		"y":         y,
+		"card":      card,
+		"board":     r.Board,
+		"nextTurn":  r.Players[r.TurnIdx].ID,
+		"drawnCard": drawnCard, // Include the drawn card in the response
 	})
 
 	// Save the updated room state

@@ -177,18 +177,39 @@ func (h *Hub) handleHumanMove(roomCode string, data interface{}) {
 	currentPlayer := room.Players[room.TurnIdx]
 	if currentPlayer.IsBot {
 		go func() {
-			if botMove, err := h.roomManager.BotMove(room, currentPlayer.ID); err == nil {
-				// Broadcast the bot's move
-				h.Broadcast(roomCode, "bot_move", map[string]interface{}{
-					"bot_id": currentPlayer.ID,
-					"x":      botMove.X,
-					"y":      botMove.Y,
-					"card":   botMove.Card,
-					"board":  room.Board,
-				})
-			} else {
-				log.Printf("Failed to process bot move: %v", err)
-			}
+			h.handleBotMove(roomCode)
 		}()
 	}
+}
+
+func (h *Hub) handleBotMove(roomCode string) {
+	// Get the room
+	room, ok := h.roomManager.Get(roomCode)
+	if !ok {
+		log.Printf("Room not found: %s", roomCode)
+		return
+	}
+
+	// Get the current player
+	currentPlayer := room.Players[room.TurnIdx]
+	if !currentPlayer.IsBot {
+		log.Printf("Current player is not a bot: %s", currentPlayer.ID)
+		return
+	}
+
+	// Trigger the bot's move
+	botMove, err := h.roomManager.BotMove(room, currentPlayer.ID)
+	if err != nil {
+		log.Printf("Failed to process bot move: %v", err)
+		return
+	}
+
+	// Broadcast the bot's move
+	h.Broadcast(roomCode, "bot_move", map[string]interface{}{
+		"bot_id": currentPlayer.ID,
+		"x":      botMove.X,
+		"y":      botMove.Y,
+		"card":   botMove.Card,
+		"board":  room.Board,
+	})
 }
