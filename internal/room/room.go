@@ -2,11 +2,13 @@ package room
 
 import (
 	"errors"
+	"javanese-chess/internal/api/ws"
 	"javanese-chess/internal/config"
 	"javanese-chess/internal/game"
 	"math/rand"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
@@ -16,6 +18,7 @@ type Player struct {
 	IsBot bool   `json:"isBot"`
 	Hand  []int  `json:"hand"`
 	Index int    `json:"index"`
+	Deck  []int  `json:"deck"`
 }
 
 type Room struct {
@@ -39,10 +42,11 @@ type Store interface {
 type Manager struct {
 	store Store
 	cfg   config.Config
+	hub   *ws.Hub
 }
 
-func NewManager(s Store, cfg config.Config) *Manager {
-	return &Manager{store: s, cfg: cfg}
+func NewManager(s Store, cfg config.Config, hub *ws.Hub) *Manager {
+	return &Manager{store: s, cfg: cfg, hub: hub}
 }
 
 func (m *Manager) CreateRoom(creatorName string) *Room {
@@ -79,6 +83,13 @@ func NewRoomWithID(roomID, creatorName string) *Room {
 	// Create a new board with the default configuration
 	board := game.NewBoard(defaultCfg.BoardSize)
 
+	// Generate and shuffle the deck for the first player
+	deck := GenerateDeck()
+
+	// Draw the initial 3 cards
+	initialHand := deck[:3]
+	deck = deck[3:]
+
 	r := &Room{
 		ID:         roomID,
 		Code:       roomID, // Use the provided RoomID as the Code
@@ -98,9 +109,24 @@ func NewRoomWithID(roomID, creatorName string) *Room {
 		Name:  creatorName,
 		IsBot: false,
 		Index: 0,
-		Hand:  []int{1, 2, 3},
+		Hand:  initialHand,
+		Deck:  deck,
 	})
 	return r
+}
+
+// GenerateDeck creates a shuffled deck of 18 cards (two sets of 1-9)
+func GenerateDeck() []int {
+	deck := make([]int, 18)
+	for i := 0; i < 9; i++ {
+		deck[i] = i + 1
+		deck[i+9] = i + 1
+	}
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	r.Shuffle(len(deck), func(i, j int) {
+		deck[i], deck[j] = deck[j], deck[i]
+	})
+	return deck
 }
 
 func (m *Manager) CreateRoomWithID(roomID, playerName string) *Room {
@@ -138,7 +164,8 @@ func (m *Manager) ApplyMove(r *Room, playerID string, x, y, card int) error {
 	if cp == nil || cp.ID != playerID {
 		return errors.New("not your turn or player invalid")
 	}
-	// ensure legal
+
+	// Ensure the move is legal
 	legal := false
 	for _, mv := range game.GenerateLegalMoves(r.Board, cp.Hand, playerID) {
 		if mv.X == x && mv.Y == y && mv.Card == card {
@@ -150,8 +177,10 @@ func (m *Manager) ApplyMove(r *Room, playerID string, x, y, card int) error {
 		return errors.New("illegal move")
 	}
 
+	// Apply the move to the board
 	game.ApplyMove(&r.Board, x, y, playerID, card)
-	// remove card from hand
+
+	// Remove the card from the player's hand
 	for i, v := range cp.Hand {
 		if v == card {
 			cp.Hand = append(cp.Hand[:i], cp.Hand[i+1:]...)
@@ -159,10 +188,37 @@ func (m *Manager) ApplyMove(r *Room, playerID string, x, y, card int) error {
 		}
 	}
 	game.UpdateVState(&r.Board)
+
+	// Draw a new card from the deck
+	if len(cp.Deck) > 0 {
+		cp.Hand = append(cp.Hand, cp.Deck[0])
+		cp.Deck = cp.Deck[1:]
+	}
+
+	// Check for a winning move
 	if game.IsWinningAfter(r.Board, x, y, playerID, card) {
 		r.WinnerID = &playerID
+		m.hub.Broadcast(r.Code, "game_over", gin.H{
+			"winner": playerID,
+			"board":  r.Board,
+		})
+		return nil
 	}
+
+	// Update the turn index to the next player
 	r.TurnIdx = (r.TurnIdx + 1) % len(r.Players)
+
+	// Broadcast the updated game state
+	m.hub.Broadcast(r.Code, "move", gin.H{
+		"playerID": playerID,
+		"x":        x,
+		"y":        y,
+		"card":     card,
+		"board":    r.Board,
+		"nextTurn": r.Players[r.TurnIdx].ID,
+	})
+
+	// Save the updated room state
 	m.store.SaveRoom(r)
 	return nil
 }
@@ -172,9 +228,11 @@ func (m *Manager) BotMove(r *Room, botID string) (mv game.Move, err error) {
 	if cp == nil || cp.ID != botID {
 		return mv, errors.New("not bot's turn")
 	}
+
+	// Generate all legal moves for the bot
 	cands := game.GenerateLegalMoves(r.Board, cp.Hand, botID)
 	if len(cands) == 0 {
-		return mv, errors.New("no legal moves")
+		return mv, errors.New("no legal moves available")
 	}
 
 	// Get room-specific weights, or use defaults
@@ -183,27 +241,121 @@ func (m *Manager) BotMove(r *Room, botID string) (mv game.Move, err error) {
 		weights = r.RoomConfig.GetWeights()
 	}
 
-	best := cands[0]
-	bestScore := game.HeuristicScore(r.Board, best, cp.Hand, weights)
-	for _, c := range cands[1:] {
-		if s := game.HeuristicScore(r.Board, c, cp.Hand, weights); s > bestScore {
-			best = c
-			bestScore = s
-		}
+	// Find the best move based on heuristic scores
+	best, err := m.findBestMove(r.Board, cands, cp.Hand, weights)
+	if err != nil {
+		return mv, err
 	}
+
+	// Apply the best move
 	if err := m.ApplyMove(r, botID, best.X, best.Y, best.Card); err != nil {
 		return mv, err
 	}
+
+	// Broadcast the bot's move
+	m.hub.Broadcast(r.Code, "bot_move", gin.H{
+		"botID": botID,
+		"x":     best.X,
+		"y":     best.Y,
+		"card":  best.Card,
+		"board": r.Board,
+	})
+
 	return best, nil
+}
+
+// Helper function to find the best move based on heuristic scores
+func (m *Manager) findBestMove(board game.Board, cands []game.Move, hand []int, weights config.HeuristicWeights) (game.Move, error) {
+	if len(cands) == 0 {
+		return game.Move{}, errors.New("no candidates for best move")
+	}
+
+	best := cands[0]
+	bestScore := game.HeuristicScore(board, best, hand, weights)
+	for _, c := range cands[1:] {
+		if score := game.HeuristicScore(board, c, hand, weights); score > bestScore {
+			best = c
+			bestScore = score
+		}
+	}
+
+	return best, nil
+}
+
+func (m *Manager) CheckEndgame(r *Room) {
+	// Check if there is already a winner
+	if r.WinnerID != nil {
+		return
+	}
+
+	// Check if no moves are left for all players
+	noMovesLeft := true
+	for _, player := range r.Players {
+		if len(game.GenerateLegalMoves(r.Board, player.Hand, player.ID)) > 0 {
+			noMovesLeft = false
+			break
+		}
+	}
+
+	if noMovesLeft {
+		// Determine the winner based on adjacent card values
+		m.determineWinnerByAdjacentValues(r)
+	}
+}
+
+func (m *Manager) determineWinnerByAdjacentValues(r *Room) {
+	playerScores := make(map[string]int)
+
+	// Calculate scores for each player based on adjacent card values
+	for x := 0; x < r.Board.Size; x++ {
+		for y := 0; y < r.Board.Size; y++ {
+			cell := r.Board.Cells[x][y]
+			if cell.OwnerID != "" {
+				playerScores[cell.OwnerID] += m.calculateAdjacentCardValue(r.Board, x, y)
+			}
+		}
+	}
+
+	// Find the player with the highest score
+	var winnerID string
+	highestScore := -1
+	for playerID, score := range playerScores {
+		if score > highestScore {
+			highestScore = score
+			winnerID = playerID
+		}
+	}
+
+	// Set the winner
+	if winnerID != "" {
+		r.WinnerID = &winnerID
+	}
+}
+
+func (m *Manager) calculateAdjacentCardValue(board game.Board, x, y int) int {
+	totalValue := 0
+	directions := []struct{ dx, dy int }{
+		{-1, 0}, {1, 0}, {0, -1}, {0, 1}, // Horizontal and vertical
+		{-1, -1}, {1, 1}, {-1, 1}, {1, -1}, // Diagonal
+	}
+
+	for _, dir := range directions {
+		nx, ny := x+dir.dx, y+dir.dy
+		if nx >= 0 && ny >= 0 && nx < board.Size && ny < board.Size {
+			totalValue += board.Cells[nx][ny].Value
+		}
+	}
+
+	return totalValue
 }
 
 const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
 func randCode(n int) string {
-	rand.Seed(time.Now().UnixNano())
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	b := make([]byte, n)
 	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
+		b[i] = letters[r.Intn(len(letters))]
 	}
 	return string(b)
 }

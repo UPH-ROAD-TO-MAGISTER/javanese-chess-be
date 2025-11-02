@@ -24,8 +24,8 @@ import (
 func main() {
 	cfg := config.Load()
 	mem := store.NewMemoryStore()
-	rm := room.NewManager(mem, *cfg)
 	hub := ws.NewHub()
+	rm := room.NewManager(mem, *cfg, hub)
 	r := httpapi.SetupRouter(rm, mem, hub)
 
 	// Optional: Add root redirect to swagger

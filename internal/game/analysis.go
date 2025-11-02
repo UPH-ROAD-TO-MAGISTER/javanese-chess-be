@@ -57,11 +57,12 @@ func blocksImmediateThreat(b Board, x, y int, owner string) bool {
 					selfCount++
 					continue
 				}
-				if cell.OwnerID == "" {
+				switch cell.OwnerID {
+				case "":
 					emptyCount++
-				} else if cell.OwnerID == owner {
+				case owner:
 					selfCount++
-				} else {
+				default:
 					enemyCount++
 				}
 			}
