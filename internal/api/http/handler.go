@@ -18,7 +18,7 @@ import (
 // @Produce json
 // @Param request body PlayRequest true "Room info"
 // @Success 200 {object} map[string]interface{}
-// @Router /play [post]
+// @Router /api/play [post]
 func PlayHandler(rm *room.Manager, hub *ws.Hub) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var playRequest PlayRequest

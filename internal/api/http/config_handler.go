@@ -28,7 +28,7 @@ func NewConfigHandler(s room.Store, hub *ws.Hub) *ConfigHandler {
 // @Tags Config
 // @Produce json
 // @Success 200 {object} map[string]interface{}
-// @Router /config/weights/default [get]
+// @Router /api/config/weights/default [get]
 func (h *ConfigHandler) GetDefaultWeightsHandler(c *gin.Context) {
 	weights := config.Get().DefaultWeights
 
@@ -44,7 +44,7 @@ func (h *ConfigHandler) GetDefaultWeightsHandler(c *gin.Context) {
 // @Produce json
 // @Param roomCode query string true "Room Code"
 // @Success 200 {object} map[string]interface{}
-// @Router /config/weights/room [get]
+// @Router /api/config/weights/room [get]
 func (h *ConfigHandler) GetRoomWeightsHandler(c *gin.Context) {
 	roomCode := c.Query("roomCode")
 	if roomCode == "" {

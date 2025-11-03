@@ -21,11 +21,11 @@ func SetupRouter(mgr *room.Manager, s room.Store, hub *ws.Hub) *gin.Engine {
 	}))
 
 	// Existing handlers (not using store directly)
-	r.POST("/play", PlayHandler(mgr, hub))
+	r.POST("/api/play", PlayHandler(mgr, hub))
 
 	// Config routes (room-based)
 	configHandler := NewConfigHandler(s, hub)
-	configGroup := r.Group("/config")
+	configGroup := r.Group("/api/config")
 	{
 		configGroup.GET("/weights/default", configHandler.GetDefaultWeightsHandler)
 		configGroup.GET("/weights/room", configHandler.GetRoomWeightsHandler)

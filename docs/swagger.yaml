@@ -82,7 +82,7 @@ info:
   title: Javanese Chess Bot API
   version: "1.0"
 paths:
-  /config/weights/default:
+  /api/config/weights/default:
     get:
       description: Returns the default heuristic weights based on research paper (Section
         2.4)
@@ -97,7 +97,7 @@ paths:
       summary: Get default heuristic weights
       tags:
       - Config
-  /config/weights/room:
+  /api/config/weights/room:
     get:
       description: Returns the heuristic weights configured for a specific room
       parameters:
@@ -117,7 +117,7 @@ paths:
       summary: Get room heuristic weights
       tags:
       - Config
-  /play:
+  /api/play:
     post:
       consumes:
       - application/json

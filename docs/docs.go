@@ -18,7 +18,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/config/weights/default": {
+        "/api/config/weights/default": {
             "get": {
                 "description": "Returns the default heuristic weights based on research paper (Section 2.4)",
                 "produces": [
@@ -39,7 +39,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/config/weights/room": {
+        "/api/config/weights/room": {
             "get": {
                 "description": "Returns the heuristic weights configured for a specific room",
                 "produces": [
@@ -69,7 +69,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/play": {
+        "/api/play": {
             "post": {
                 "description": "Initialize room (create if missing), add bots and apply provided heuristic weights in one request",
                 "consumes": [
