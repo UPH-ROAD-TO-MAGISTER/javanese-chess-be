@@ -14,7 +14,7 @@ func SetupRouter(mgr *room.Manager, s room.Store, hub *ws.Hub) *gin.Engine {
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://98.70.41.170:5173", "http://localhost:5173"},
+		AllowOrigins:     []string{"http://98.70.41.170:5000", "http://localhost:5173"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
 		AllowCredentials: true,
