@@ -31,6 +31,6 @@ type Player struct {
 	Name  string `json:"name"`
 	IsBot bool   `json:"isBot"`
 	Hand  []int  `json:"hand"`
-	Deck  []int  `json:"deck"`
+	Deck  []int  `json:"-"`
 	Color string `json:"color"` // Added field for player color
 }
