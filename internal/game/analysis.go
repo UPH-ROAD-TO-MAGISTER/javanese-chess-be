@@ -113,3 +113,40 @@ func TotalOwnedSum(b Board, playerID string) int {
 	}
 	return sum
 }
+
+// GenerateLegalMoves generates all legal moves for a player
+func GenerateLegalMoves(b *Board, hand []int, playerID string) []Move {
+	var moves []Move
+
+	for y := 0; y < b.Size; y++ {
+		for x := 0; x < b.Size; x++ {
+			cell := b.Cells[y][x]
+
+			// Condition 1: not blocked
+			if cell.VState == 1 {
+				continue
+			}
+
+			// Skip permanent card 9
+			if cell.VState == 0 && cell.Value == 9 {
+				continue
+			}
+
+			for _, card := range hand {
+				// Condition 2: card must be higher
+				if cell.Value >= card {
+					continue
+				}
+
+				// Condition 3: cannot overwrite own card
+				if cell.OwnerID == playerID {
+					continue
+				}
+
+				moves = append(moves, Move{X: x, Y: y, Card: card})
+			}
+		}
+	}
+
+	return moves
+}

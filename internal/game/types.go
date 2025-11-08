@@ -1,17 +1,17 @@
 package game
 
-type CellState int
+type CellVState int
 
 const (
-	CellBlocked CellState = iota
-	CellPlaceable
-	CellReplaceable
+	CellAccessible  CellVState = 0 // Empty and accessible, or permanent (card 9)
+	CellBlocked     CellVState = 1 // Empty but blocked (has filled neighbors)
+	CellReplaceable CellVState = 2 // Filled and can be overwritten
 )
 
 type Cell struct {
-	Value   int       `json:"value"`   // Card value (0 if empty)
-	VState  CellState `json:"vState"`  // State of the cell (e.g., placeable or not)
-	OwnerID string    `json:"ownerId"` // ID of the player who owns the cell
+	Value   int        `json:"value"`   // Card value (0 if empty)
+	VState  CellVState `json:"vState"`  // State of the cell (e.g., placeable or not)
+	OwnerID string     `json:"ownerId"` // ID of the player who owns the cell
 }
 
 type Board struct {
@@ -29,8 +29,8 @@ func NewBoard(size int) Board {
 		c[i] = make([]Cell, size)
 		for j := range c[i] {
 			c[i][j] = Cell{
-				Value:  0,             // No card placed yet
-				VState: CellPlaceable, // All cells are placeable by default
+				Value:  0,               // No card placed yet
+				VState: CellReplaceable, // All cells are placeable by default
 			}
 		}
 	}

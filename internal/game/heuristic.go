@@ -2,6 +2,7 @@ package game
 
 import (
 	"javanese-chess/internal/config"
+	"log"
 )
 
 // HeuristicScore evaluates a move based on the heuristic function from Section 2.4
@@ -201,4 +202,351 @@ func countInDirection(b Board, x, y, dx, dy int, ownerID string) int {
 		ny += dy
 	}
 	return count
+}
+
+// getOpponentIDs returns all opponent player IDs on the board
+func getOpponentIDs(b *Board, playerID string) []string {
+	seen := make(map[string]bool)
+	var opponents []string
+
+	for y := 0; y < b.Size; y++ {
+		for x := 0; x < b.Size; x++ {
+			ownerID := b.Cells[y][x].OwnerID
+			if ownerID != "" && ownerID != playerID && !seen[ownerID] {
+				seen[ownerID] = true
+				opponents = append(opponents, ownerID)
+			}
+		}
+	}
+
+	return opponents
+}
+
+// countAdjacentOpponentCards counts opponent cards in 8 directions
+func countAdjacentOpponentCards(b *Board, x, y int, playerID string) int {
+	count := 0
+
+	for q := -1; q <= 1; q++ {
+		for p := -1; p <= 1; p++ {
+			if p == 0 && q == 0 {
+				continue
+			}
+			nx, ny := x+p, y+q
+			if nx >= 0 && nx < b.Size && ny >= 0 && ny < b.Size {
+				cell := b.Cells[ny][nx]
+				if cell.OwnerID != "" && cell.OwnerID != playerID {
+					count++
+				}
+			}
+		}
+	}
+
+	return count
+}
+
+// countLineOpponentCards counts consecutive opponent cards in a direction
+func countLineOpponentCards(b *Board, x, y int, dir [2]int, playerID string) int {
+	count := 0
+
+	// Forward direction
+	nx, ny := x+dir[0], y+dir[1]
+	for nx >= 0 && nx < b.Size && ny >= 0 && ny < b.Size {
+		cell := b.Cells[ny][nx]
+		if cell.OwnerID != "" && cell.OwnerID != playerID {
+			count++
+			nx += dir[0]
+			ny += dir[1]
+		} else {
+			break
+		}
+	}
+
+	// Backward direction
+	nx, ny = x-dir[0], y-dir[1]
+	for nx >= 0 && nx < b.Size && ny >= 0 && ny < b.Size {
+		cell := b.Cells[ny][nx]
+		if cell.OwnerID != "" && cell.OwnerID != playerID {
+			count++
+			nx -= dir[0]
+			ny -= dir[1]
+		} else {
+			break
+		}
+	}
+
+	return count
+}
+
+// countLineOwnCards counts consecutive own cards in a direction
+func countLineOwnCards(b *Board, x, y int, dir [2]int, playerID string) int {
+	count := 1 // The position itself
+
+	// Forward direction
+	nx, ny := x+dir[0], y+dir[1]
+	for nx >= 0 && nx < b.Size && ny >= 0 && ny < b.Size {
+		if b.Cells[ny][nx].OwnerID == playerID {
+			count++
+			nx += dir[0]
+			ny += dir[1]
+		} else {
+			break
+		}
+	}
+
+	// Backward direction
+	nx, ny = x-dir[0], y-dir[1]
+	for nx >= 0 && nx < b.Size && ny >= 0 && ny < b.Size {
+		if b.Cells[ny][nx].OwnerID == playerID {
+			count++
+			nx -= dir[0]
+			ny -= dir[1]
+		} else {
+			break
+		}
+	}
+
+	return count
+}
+
+// hasThreeInRowThreat checks if opponent has 3-in-a-row at this position
+func hasThreeInRowThreat(b *Board, x, y int, opponentID string) bool {
+	directions := [][2]int{
+		{1, 0}, {0, 1}, {1, 1}, {1, -1},
+	}
+
+	for _, dir := range directions {
+		count := 1 // The position itself
+
+		// Forward direction
+		nx, ny := x+dir[0], y+dir[1]
+		for i := 0; i < 3; i++ {
+			if nx >= 0 && nx < b.Size && ny >= 0 && ny < b.Size {
+				if b.Cells[ny][nx].OwnerID == opponentID {
+					count++
+					nx += dir[0]
+					ny += dir[1]
+				} else {
+					break
+				}
+			} else {
+				break
+			}
+		}
+
+		// Backward direction
+		nx, ny = x-dir[0], y-dir[1]
+		for i := 0; i < 3; i++ {
+			if nx >= 0 && nx < b.Size && ny >= 0 && ny < b.Size {
+				if b.Cells[ny][nx].OwnerID == opponentID {
+					count++
+					nx -= dir[0]
+					ny -= dir[1]
+				} else {
+					break
+				}
+			} else {
+				break
+			}
+		}
+
+		if count >= 3 {
+			return true
+		}
+	}
+
+	return false
+}
+
+// f_win detects if move creates 4-in-a-row (winning move)
+func f_win(b *Board, x, y int, playerID string) int {
+	// Temporarily place the card
+	originalOwner := b.Cells[y][x].OwnerID
+	b.Cells[y][x].OwnerID = playerID
+
+	// Check if this creates a win
+	hasWin := CheckWin(b, playerID)
+
+	// Restore original state
+	b.Cells[y][x].OwnerID = originalOwner
+
+	if hasWin {
+		return 1
+	}
+	return 0
+}
+
+// f_threat detects opponent threats at position
+func f_threat(b *Board, x, y int, playerID string) int {
+	opponents := getOpponentIDs(b, playerID)
+
+	for _, opponentID := range opponents {
+		if hasThreeInRowThreat(b, x, y, opponentID) {
+			return 1
+		}
+	}
+
+	return 0
+}
+
+// f_replace evaluates replacement value during threats
+func f_replace(b *Board, x, y int, playerID string, isThreat bool, cfg *config.Config) int {
+	cell := b.Cells[y][x]
+
+	// Only score if overwriting opponent during threat
+	if !isThreat || cell.OwnerID == "" || cell.OwnerID == playerID {
+		return 0
+	}
+
+	score := cfg.DefaultWeights.ReplaceWhenThreat // Base: 200
+
+	// Add positional bonus based on adjacent opponent cards
+	adjacentOpponentCount := countAdjacentOpponentCards(b, x, y, playerID)
+
+	if adjacentOpponentCount >= 3 {
+		score += cfg.DefaultWeights.ReplacePosMiddle // +75 (middle position)
+	} else if adjacentOpponentCount >= 1 {
+		score += cfg.DefaultWeights.ReplacePosSide // +50 (side position)
+	}
+
+	return score
+}
+
+// f_blocks calculates blocking value for adjacent opponent cards
+func f_blocks(b *Board, x, y int, playerID string, cfg *config.Config) int {
+	score := 0
+
+	directions := [][2]int{
+		{1, 0}, {0, 1}, {1, 1}, {1, -1},
+	}
+
+	for _, dir := range directions {
+		count := countLineOpponentCards(b, x, y, dir, playerID)
+
+		if count >= 3 {
+			score += cfg.DefaultWeights.BlockWhenThreat // +100
+		} else if count >= 2 {
+			score += cfg.DefaultWeights.BlockPotential // +70
+		}
+	}
+
+	return score
+}
+
+// f_formation rewards building 2 or 3-in-a-row alignments
+func f_formation(b *Board, x, y int, playerID string, cfg *config.Config) int {
+	maxAlignment := 0
+
+	directions := [][2]int{
+		{1, 0}, {0, 1}, {1, 1}, {1, -1},
+	}
+
+	for _, dir := range directions {
+		count := countLineOwnCards(b, x, y, dir, playerID)
+		if count > maxAlignment {
+			maxAlignment = count
+		}
+	}
+
+	if maxAlignment >= 3 {
+		return cfg.DefaultWeights.BuildAlignment3 // +100
+	} else if maxAlignment >= 2 {
+		return cfg.DefaultWeights.BuildAlignment2 // +50
+	}
+
+	return 0
+}
+
+// f_value assesses card value (dual role: general play vs threat response)
+func f_value(card int, isOverwritingDuringThreat bool, cfg *config.Config) int {
+	if isOverwritingDuringThreat {
+		// Use high cards when responding to threats
+		return cfg.DefaultWeights.ReplaceValuesThreat[card]
+	}
+	// Use low cards in general play (save high cards)
+	return cfg.DefaultWeights.ReplaceValuesPotential[card]
+}
+
+func EvaluateMove(b *Board, x, y int, card int, playerID string, cfg *config.Config) int {
+	score := 0
+
+	// 1. f_win
+	winScore := 0
+	if f_win(b, x, y, playerID) == 1 {
+		winScore = cfg.DefaultWeights.WWin
+		score += winScore
+	}
+
+	// 2. f_threat
+	threatScore := 0
+	isThreat := f_threat(b, x, y, playerID) == 1
+	if isThreat {
+		threatScore = cfg.DefaultWeights.WThreat
+		score += threatScore
+	}
+
+	// 3. f_replace
+	replaceScore := f_replace(b, x, y, playerID, isThreat, cfg)
+	score += replaceScore
+
+	// 4. f_blocks
+	blocksScore := f_blocks(b, x, y, playerID, cfg)
+	score += blocksScore
+
+	// 5. f_formation
+	formationScore := f_formation(b, x, y, playerID, cfg)
+	score += formationScore
+
+	// 6. f_value
+	cell := b.Cells[y][x]
+	isOverwritingDuringThreat := isThreat && cell.OwnerID != "" && cell.OwnerID != playerID
+	valueScore := f_value(card, isOverwritingDuringThreat, cfg)
+	score += valueScore
+
+	// Debug logging
+	log.Printf("Move (%d,%d) card=%d | win=%d threat=%d replace=%d blocks=%d formation=%d value=%d | TOTAL=%d",
+		x, y, card, winScore, threatScore, replaceScore, blocksScore, formationScore, valueScore, score)
+
+	return score
+}
+
+// CheckWin checks if a player has 4 cards in a row
+func CheckWin(b *Board, playerID string) bool {
+	directions := [][2]int{
+		{1, 0},  // Horizontal
+		{0, 1},  // Vertical
+		{1, 1},  // Diagonal down-right
+		{1, -1}, // Diagonal up-right
+	}
+
+	// Check every position on the board
+	for y := 0; y < b.Size; y++ {
+		for x := 0; x < b.Size; x++ {
+			if b.Cells[y][x].OwnerID != playerID {
+				continue
+			}
+
+			// Check each direction from this position
+			for _, dir := range directions {
+				count := 1 // Count the current cell
+
+				// Check forward direction
+				nx, ny := x+dir[0], y+dir[1]
+				for count < 4 && nx >= 0 && nx < b.Size && ny >= 0 && ny < b.Size {
+					if b.Cells[ny][nx].OwnerID == playerID {
+						count++
+						nx += dir[0]
+						ny += dir[1]
+					} else {
+						break
+					}
+				}
+
+				if count >= 4 {
+					return true
+				}
+			}
+		}
+	}
+
+	return false
 }

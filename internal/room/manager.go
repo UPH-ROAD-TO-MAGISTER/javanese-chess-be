@@ -203,9 +203,9 @@ func (m *Manager) ApplyMove(r *shared.Room, playerID string, x, y, card int) err
 		return errors.New("not your turn or player invalid")
 	}
 
-	// Ensure the move is legal
+	// Ensure the move is legal (FIX: Add & before r.Board)
 	legal := false
-	for _, mv := range game.GenerateLegalMoves(r.Board, cp.Hand, playerID) {
+	for _, mv := range game.GenerateLegalMoves(&r.Board, cp.Hand, playerID) {
 		if mv.X == x && mv.Y == y && mv.Card == card {
 			legal = true
 			break
@@ -256,7 +256,7 @@ func (m *Manager) ApplyMove(r *shared.Room, playerID string, x, y, card int) err
 		"card":      card,
 		"board":     r.Board,
 		"nextTurn":  r.Players[r.TurnIdx].ID,
-		"drawnCard": drawnCard, // Include the drawn card in the response
+		"drawnCard": drawnCard,
 	})
 
 	// Save the updated room state
@@ -270,55 +270,43 @@ func (m *Manager) BotMove(r *shared.Room, botID string) (shared.Move, error) {
 		return shared.Move{}, errors.New("not bot's turn")
 	}
 
-	// Generate all legal moves for the bot
-	cands := game.GenerateLegalMoves(r.Board, cp.Hand, botID)
+	// Generate all legal moves for the bot (FIX: Add & before r.Board)
+	cands := game.GenerateLegalMoves(&r.Board, cp.Hand, botID)
 	if len(cands) == 0 {
 		return shared.Move{}, errors.New("no legal moves available")
 	}
 
-	// Get room-specific weights, or use defaults
-	weights := r.Cfg.DefaultWeights
-	if r.RoomConfig != nil {
-		weights = r.RoomConfig.GetWeights()
+	// Find the best move using the new heuristic evaluation
+	var bestMove *game.Move
+	bestScore := -1
+
+	for _, candidate := range cands {
+		// Use the new EvaluateMove function
+		score := game.EvaluateMove(&r.Board, candidate.X, candidate.Y, candidate.Card, botID, &m.cfg)
+
+		if score > bestScore {
+			bestScore = score
+			bestMove = &candidate
+		}
 	}
 
-	// Find the best move based on heuristic scores
-	best, err := m.findBestMove(r.Board, cands, cp.Hand, weights)
-	if err != nil {
-		return shared.Move{}, err
+	if bestMove == nil {
+		return shared.Move{}, errors.New("could not find best move")
 	}
 
 	// Apply the best move
-	if err := m.ApplyMove(r, botID, best.X, best.Y, best.Card); err != nil {
+	if err := m.ApplyMove(r, botID, bestMove.X, bestMove.Y, bestMove.Card); err != nil {
 		return shared.Move{}, err
 	}
 
 	game.UpdateVState(&r.Board)
 
 	return shared.Move{
-		X:        best.X,
-		Y:        best.Y,
-		Card:     best.Card,
+		X:        bestMove.X,
+		Y:        bestMove.Y,
+		Card:     bestMove.Card,
 		PlayerID: botID,
 	}, nil
-}
-
-// Helper function to find the best move based on heuristic scores
-func (m *Manager) findBestMove(board game.Board, cands []game.Move, hand []int, weights config.HeuristicWeights) (game.Move, error) {
-	if len(cands) == 0 {
-		return game.Move{}, errors.New("no candidates for best move")
-	}
-
-	best := cands[0]
-	bestScore := game.HeuristicScore(board, best, hand, weights)
-	for _, c := range cands[1:] {
-		if score := game.HeuristicScore(board, c, hand, weights); score > bestScore {
-			best = c
-			bestScore = score
-		}
-	}
-
-	return best, nil
 }
 
 func (m *Manager) CheckEndgame(r *shared.Room) {
@@ -327,10 +315,10 @@ func (m *Manager) CheckEndgame(r *shared.Room) {
 		return
 	}
 
-	// Check if no moves are left for all players
+	// Check if no moves are left for all players (FIX: Add & before r.Board)
 	noMovesLeft := true
 	for _, player := range r.Players {
-		if len(game.GenerateLegalMoves(r.Board, player.Hand, player.ID)) > 0 {
+		if len(game.GenerateLegalMoves(&r.Board, player.Hand, player.ID)) > 0 {
 			noMovesLeft = false
 			break
 		}
