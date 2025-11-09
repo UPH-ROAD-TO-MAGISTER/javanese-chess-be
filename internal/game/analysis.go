@@ -13,70 +13,6 @@ type Threat struct {
 	Dir  [2]int
 }
 
-func chainLenAfter(b Board, x, y int, owner string) int {
-	dirs := [][2]int{{1, 0}, {0, 1}, {1, 1}, {1, -1}}
-	max := 1
-	for _, d := range dirs {
-		cnt := 1
-		i, j := x+d[0], y+d[1]
-		for in(i, j, b.Size) && b.Cells[j][i].OwnerID == owner {
-			cnt++
-			i += d[0]
-			j += d[1]
-		}
-		i, j = x-d[0], y-d[1]
-		for in(i, j, b.Size) && b.Cells[j][i].OwnerID == owner {
-			cnt++
-			i -= d[0]
-			j -= d[1]
-		}
-		if cnt > max {
-			max = cnt
-		}
-	}
-	return max
-}
-
-func blocksImmediateThreat(b Board, x, y int, owner string) bool {
-	dirs := [][2]int{{1, 0}, {0, 1}, {1, 1}, {1, -1}}
-	for _, d := range dirs {
-		for offset := -3; offset <= 0; offset++ {
-			enemyCount := 0
-			selfCount := 0
-			emptyCount := 0
-			valid := true
-			for i := 0; i < 4; i++ {
-				px := x + d[0]*(offset+i)
-				py := y + d[1]*(offset+i)
-				if !in(px, py, b.Size) {
-					valid = false
-					break
-				}
-				cell := b.Cells[py][px]
-				if px == x && py == y {
-					selfCount++
-					continue
-				}
-				switch cell.OwnerID {
-				case "":
-					emptyCount++
-				case owner:
-					selfCount++
-				default:
-					enemyCount++
-				}
-			}
-			if !valid {
-				continue
-			}
-			if enemyCount == 3 && selfCount == 1 && emptyCount == 0 {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 func TieBreakerLineSum(b Board, playerID string) int {
 	maxSum := 0
 	dirs := [][2]int{{1, 0}, {0, 1}, {1, 1}, {1, -1}}
@@ -122,18 +58,18 @@ func GenerateLegalMoves(b *Board, hand []int, playerID string) []Move {
 		for x := 0; x < b.Size; x++ {
 			cell := b.Cells[y][x]
 
-			// Condition 1: not blocked
-			if cell.VState == 1 {
+			// Condition 1: not blocked (VState == 1 means blocked)
+			if cell.VState == CellBlocked {
 				continue
 			}
 
-			// Skip permanent card 9
-			if cell.VState == 0 && cell.Value == 9 {
+			// Skip permanent card 9 (VState == 0 and Value == 9)
+			if cell.VState == CellAccessible && cell.Value == 9 {
 				continue
 			}
 
 			for _, card := range hand {
-				// Condition 2: card must be higher
+				// Condition 2: card must be higher than current value
 				if cell.Value >= card {
 					continue
 				}
@@ -143,7 +79,7 @@ func GenerateLegalMoves(b *Board, hand []int, playerID string) []Move {
 					continue
 				}
 
-				moves = append(moves, Move{X: x, Y: y, Card: card})
+				moves = append(moves, Move{X: x, Y: y, Card: card, PlayerID: playerID})
 			}
 		}
 	}

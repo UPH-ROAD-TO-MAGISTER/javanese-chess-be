@@ -22,5 +22,3 @@ func IsWinningAfter(b Board, x, y int, owner string, card int) bool {
 	}
 	return false
 }
-
-func in(x, y, n int) bool { return x >= 0 && y >= 0 && x < n && y < n }

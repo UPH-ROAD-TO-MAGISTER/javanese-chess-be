@@ -12,44 +12,36 @@ const (
 	// Game Constants
 	DefaultBoardSize = 9 // Standard Javanese Chess board is 9x9
 
-	// Heuristic Weight Constants - H(s,a) = W₁·f_win + W₂·f_threat + W₃·f_replace + W₄·f_block + W₅·f_align + W₆·f_cost
+	// Base heuristic values from the research table
 
-	// DefaultWWin - W₁: Immediate winning move detection (4-in-a-row)
-	// Highest priority - must always take a winning move
+	// Legal move base value
+	DefaultLegalMoveValue = 30
+
+	// Winning move (4-in-a-row)
 	DefaultWWin = 10000
 
-	// DefaultWThreat - W₂: Blocking opponent's immediate threat (3-in-a-row)
-	// Second priority - prevent opponent from winning
+	// Threat detection (3 opponent cards in a row)
 	DefaultWThreat = 200
 
-	// DefaultWReplaceValue - W₃: Overwriting opponent cards (strategic replacement)
-	// Medium-high priority - gain positional advantage
-	DefaultWReplaceValue = 125
+	// Replace opponent's card values (context-dependent)
+	DefaultReplaceWhenThreat = 200 // When blocking immediate threat
+	DefaultReplacePotential  = 125 // When blocking potential threat
 
-	// DefaultWBlockPath - W₄: Blocking enemy paths (cutting opponent lines)
-	// Medium priority - disrupt opponent strategy
-	DefaultWBlockPath = 70
+	// Position bonuses when replacing opponent's card
+	DefaultReplacePosCenter = 75 // Center position in opponent's line
+	DefaultReplacePosSide   = 50 // Side position in opponent's line
 
-	// DefaultWBuildAlignment - W₅: Building own alignments (2 or 3 in a row)
-	// Medium priority - prepare future winning positions
-	DefaultWBuildAlignment = 50
+	// Block opponent's path values (context-dependent)
+	DefaultBlockWhenThreat = 100 // Blocking 3-in-a-row completion
+	DefaultBlockPotential  = 70  // Blocking 2-in-a-row extension
 
-	// DefaultWCardCost - W₆: Card value management (resource efficiency)
-	// Lowest priority - tie-breaker for equal positions
-	DefaultWCardCost = 1
+	// Formation building (our cards in a row)
+	DefaultBuildAlignment2 = 50  // 2 of our cards in a row
+	DefaultBuildAlignment3 = 100 // 3 of our cards in a row
 
-	// Additional heuristic values from the provided table
-	DefaultLegalMoveValue    = 30
-	DefaultReplaceWhenThreat = 200
-	DefaultReplacePotential  = 125
-	DefaultReplacePosMiddle  = 75
-	DefaultReplacePosSide    = 50
-	DefaultBlockWhenThreat   = 100
-	DefaultBlockPotential    = 70
-	DefaultBuildAlignment2   = 50
-	DefaultBuildAlignment3   = 100
-	DefaultPlaySmallestCard  = 60
-	DefaultKeepNearCard      = 60
+	// Card management bonuses
+	DefaultPlaySmallestCard = 60 // Bonus for playing smallest card in hand
+	DefaultKeepNearCard     = 60 // Bonus for placing card close to our own cards
 )
 
 // Config holds all configuration values
@@ -61,55 +53,42 @@ type Config struct {
 	DefaultWeights HeuristicWeights
 }
 
-// HeuristicWeights represents AI evaluation parameters based on Section 2.4
-// H(s,a) = W₁·f_win + W₂·f_threat_block + W₃·f_replace_value + W₄·f_block_path + W₅·f_build_alignment + W₆·f_card_cost
+// HeuristicWeights represents AI evaluation parameters
 type HeuristicWeights struct {
-	// W₁: Winning move detection (4-in-a-row)
-	WWin int `json:"w_win"`
-
-	// W₂: Blocking opponent's immediate threat (3-in-a-row)
-	WThreat int `json:"w_threat"`
-
-	// W₃: Overwriting opponent cards (strategic replacement)
-	WReplaceValue int `json:"w_replace_value"`
-
-	// W₄: Blocking enemy paths (cutting opponent lines)
-	WBlockPath int `json:"w_block_path"`
-
-	// W₅: Building own alignments (2 or 3 in a row)
-	WBuildAlignment int `json:"w_build_alignment"`
-
-	// W₆: Card value management (resource efficiency)
-	WCardCost int `json:"w_card_cost"`
-
-	// Legal move value
+	// Base legal move value
 	LegalMove int `json:"legal_move"`
 
-	// Replace values when blocking an immediate threat (card 1..9 -> indices 0..8)
+	// Winning move (4-in-a-row)
+	WWin int `json:"w_win"`
+
+	// Threat detection (3 opponent cards in a row)
+	WThreat int `json:"w_threat"`
+
+	// Card values when blocking threat (high cards preferred: 1→20, 9→100)
 	ReplaceValuesThreat map[int]int `json:"replace_values_threat"`
 
-	// Replace values for potential threats (prioritize small cards: card1..9)
+	// Card values for defensive play (low cards preferred: 1→100, 9→20)
 	ReplaceValuesPotential map[int]int `json:"replace_values_potential"`
 
-	// Replace weights (contextual)
-	ReplaceWhenThreat int `json:"replace_when_threat"`
-	ReplacePotential  int `json:"replace_potential"`
+	// Replace opponent's card values (context-dependent)
+	ReplaceWhenThreat int `json:"replace_when_threat"` // 200 when blocking immediate threat
+	ReplacePotential  int `json:"replace_potential"`   // 125 when blocking potential threat
 
-	// Position modifiers for replacement
-	ReplacePosMiddle int `json:"replace_pos_middle"`
-	ReplacePosSide   int `json:"replace_pos_side"`
+	// Position bonuses when replacing opponent's card
+	ReplacePosCenter int `json:"replace_pos_center"` // 75 for center position
+	ReplacePosSide   int `json:"replace_pos_side"`   // 50 for side position
 
-	// Blocking weights
-	BlockWhenThreat int `json:"block_when_threat"`
-	BlockPotential  int `json:"block_potential"`
+	// Block opponent's path values (context-dependent)
+	BlockWhenThreat int `json:"block_when_threat"` // 100 for blocking 3-in-a-row
+	BlockPotential  int `json:"block_potential"`   // 70 for blocking 2-in-a-row
 
-	// Build alignment specific weights
-	BuildAlignment2 int `json:"build_alignment_2"`
-	BuildAlignment3 int `json:"build_alignment_3"`
+	// Formation building (our cards in a row)
+	BuildAlignment2 int `json:"build_alignment_2"` // 50 for 2-in-a-row
+	BuildAlignment3 int `json:"build_alignment_3"` // 100 for 3-in-a-row
 
-	// Smallest-card and proximity preferences
-	PlaySmallestCard int `json:"play_smallest_card"`
-	KeepNearCard     int `json:"keep_near_card"`
+	// Card management bonuses
+	PlaySmallestCard int `json:"play_smallest_card"` // 60 for playing smallest card
+	KeepNearCard     int `json:"keep_near_card"`     // 60 for placing near own cards
 }
 
 // RoomConfig holds configuration for a specific room
@@ -129,35 +108,42 @@ func Load() *Config {
 			HTTPAddr:  getHTTPAddr(),
 			BoardSize: DefaultBoardSize,
 			DefaultWeights: HeuristicWeights{
-				// Values from research paper Section 2.4
-				WWin:            DefaultWWin,
-				WThreat:         DefaultWThreat,
-				WReplaceValue:   DefaultWReplaceValue,
-				WBlockPath:      DefaultWBlockPath,
-				WBuildAlignment: DefaultWBuildAlignment,
-				WCardCost:       DefaultWCardCost, // Additional defaults per provided heuristic table
-				LegalMove:       DefaultLegalMoveValue,
+				// Base values from heuristic table
+				LegalMove: DefaultLegalMoveValue, // 30
+				WWin:      DefaultWWin,           // 10000
+				WThreat:   DefaultWThreat,        // 200
 
-				// Replace when immediate threat (card values 1..9)
-				ReplaceValuesThreat: map[int]int{1: 20, 2: 30, 3: 40, 4: 50, 5: 60, 6: 70, 7: 80, 8: 90, 9: 100},
+				// Card values when blocking threat (high cards preferred: 1→20, 9→100)
+				ReplaceValuesThreat: map[int]int{
+					1: 20, 2: 30, 3: 40, 4: 50, 5: 60,
+					6: 70, 7: 80, 8: 90, 9: 100,
+				},
 
-				// Replace values for potential (prefer small cards: 1..9 -> 100..20)
-				ReplaceValuesPotential: map[int]int{1: 100, 2: 90, 3: 80, 4: 70, 5: 60, 6: 50, 7: 40, 8: 30, 9: 20},
+				// Card values for defensive play (low cards preferred: 1→100, 9→20)
+				ReplaceValuesPotential: map[int]int{
+					1: 100, 2: 90, 3: 80, 4: 70, 5: 60,
+					6: 50, 7: 40, 8: 30, 9: 20,
+				},
 
-				ReplaceWhenThreat: DefaultReplaceWhenThreat,
-				ReplacePotential:  DefaultReplacePotential,
+				// Replace opponent's card values
+				ReplaceWhenThreat: DefaultReplaceWhenThreat, // 200
+				ReplacePotential:  DefaultReplacePotential,  // 125
 
-				ReplacePosMiddle: DefaultReplacePosMiddle,
-				ReplacePosSide:   DefaultReplacePosSide,
+				// Position bonuses when replacing
+				ReplacePosCenter: DefaultReplacePosCenter, // 75
+				ReplacePosSide:   DefaultReplacePosSide,   // 50
 
-				BlockWhenThreat: DefaultBlockWhenThreat,
-				BlockPotential:  DefaultBlockPotential,
+				// Block opponent's path values
+				BlockWhenThreat: DefaultBlockWhenThreat, // 100
+				BlockPotential:  DefaultBlockPotential,  // 70
 
-				BuildAlignment2: DefaultBuildAlignment2,
-				BuildAlignment3: DefaultBuildAlignment3,
+				// Formation building
+				BuildAlignment2: DefaultBuildAlignment2, // 50
+				BuildAlignment3: DefaultBuildAlignment3, // 100
 
-				PlaySmallestCard: DefaultPlaySmallestCard,
-				KeepNearCard:     DefaultKeepNearCard,
+				// Card management bonuses
+				PlaySmallestCard: DefaultPlaySmallestCard, // 60
+				KeepNearCard:     DefaultKeepNearCard,     // 60
 			},
 		}
 	})
@@ -206,10 +192,9 @@ func (rc *RoomConfig) IsCustomized() bool {
 // ValidateWeights checks if weights are within reasonable ranges
 func (w *HeuristicWeights) ValidateWeights() bool {
 	// All weights should be non-negative
-	if w.WWin < 0 || w.WThreat < 0 || w.WReplaceValue < 0 || w.WBlockPath < 0 ||
-		w.WBuildAlignment < 0 || w.WCardCost < 0 || w.LegalMove < 0 ||
+	if w.LegalMove < 0 || w.WWin < 0 || w.WThreat < 0 ||
 		w.ReplaceWhenThreat < 0 || w.ReplacePotential < 0 ||
-		w.ReplacePosMiddle < 0 || w.ReplacePosSide < 0 ||
+		w.ReplacePosCenter < 0 || w.ReplacePosSide < 0 ||
 		w.BlockWhenThreat < 0 || w.BlockPotential < 0 ||
 		w.BuildAlignment2 < 0 || w.BuildAlignment3 < 0 ||
 		w.PlaySmallestCard < 0 || w.KeepNearCard < 0 {
