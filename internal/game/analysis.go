@@ -1,5 +1,7 @@
 package game
 
+import "log"
+
 type ThreatType int
 
 const (
@@ -73,6 +75,10 @@ func GenerateLegalMoves(b *Board, hand []int, playerID string) []Move {
 		centerX, centerY := b.Size/2, b.Size/2 // For 9x9 board: [4,4]
 		for _, card := range hand {
 			moves = append(moves, Move{X: centerX, Y: centerY, Card: card, PlayerID: playerID})
+		}
+		// Debug log
+		if len(moves) > 0 {
+			log.Printf("DEBUG: First move detected. Board empty. Center: (%d,%d). Generated %d moves", centerX, centerY, len(moves))
 		}
 		return moves
 	}

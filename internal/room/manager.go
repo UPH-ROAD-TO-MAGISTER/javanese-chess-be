@@ -203,9 +203,26 @@ func (m *Manager) ApplyMove(r *shared.Room, playerID string, x, y, card int) err
 		return errors.New("not your turn or player invalid")
 	}
 
-	// Ensure the move is legal (FIX: Add & before r.Board)
+	// Check if card is in player's hand
+	cardInHand := false
+	for _, c := range cp.Hand {
+		if c == card {
+			cardInHand = true
+			break
+		}
+	}
+	if !cardInHand {
+		log.Printf("ERROR: Card %d not in player's hand: %v", card, cp.Hand)
+		return errors.New("card not in hand")
+	}
+
+	// Ensure the move is legal
+	legalMoves := game.GenerateLegalMoves(&r.Board, cp.Hand, playerID)
+	log.Printf("Player %s attempting move at (%d,%d) with card %d", playerID, x, y, card)
+	log.Printf("Legal moves: %+v", legalMoves)
+
 	legal := false
-	for _, mv := range game.GenerateLegalMoves(&r.Board, cp.Hand, playerID) {
+	for _, mv := range legalMoves {
 		if mv.X == x && mv.Y == y && mv.Card == card {
 			legal = true
 			break
