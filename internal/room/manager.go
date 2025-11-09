@@ -302,6 +302,9 @@ func (m *Manager) ApplyMove(r *shared.Room, playerID string, x, y, card int) err
 }
 
 func (m *Manager) BotMove(r *shared.Room, botID string) (shared.Move, error) {
+	// Add 1 second delay to simulate thinking time
+	time.Sleep(1 * time.Second)
+
 	cp := m.currentPlayer(r)
 	if cp == nil || cp.ID != botID {
 		return shared.Move{}, errors.New("not bot's turn")
