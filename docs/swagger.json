@@ -103,80 +103,69 @@
             "type": "object",
             "properties": {
                 "block_potential": {
+                    "description": "70 for blocking 2-in-a-row",
                     "type": "integer"
                 },
                 "block_when_threat": {
-                    "description": "Blocking weights",
+                    "description": "Block opponent's path values (context-dependent)",
                     "type": "integer"
                 },
                 "build_alignment_2": {
-                    "description": "Build alignment specific weights",
+                    "description": "Formation building (our cards in a row)",
                     "type": "integer"
                 },
                 "build_alignment_3": {
+                    "description": "100 for 3-in-a-row",
                     "type": "integer"
                 },
                 "keep_near_card": {
+                    "description": "60 for placing near own cards",
                     "type": "integer"
                 },
                 "legal_move": {
-                    "description": "Legal move value",
+                    "description": "Base legal move value",
                     "type": "integer"
                 },
                 "play_smallest_card": {
-                    "description": "Smallest-card and proximity preferences",
+                    "description": "Card management bonuses",
                     "type": "integer"
                 },
-                "replace_pos_middle": {
-                    "description": "Position modifiers for replacement",
+                "replace_pos_center": {
+                    "description": "Position bonuses when replacing opponent's card",
                     "type": "integer"
                 },
                 "replace_pos_side": {
+                    "description": "50 for side position",
                     "type": "integer"
                 },
                 "replace_potential": {
+                    "description": "125 when blocking potential threat",
                     "type": "integer"
                 },
                 "replace_values_potential": {
-                    "description": "Replace values for potential threats (prioritize small cards: card1..9)",
+                    "description": "Card values for defensive play (low cards preferred: 1→100, 9→20)",
                     "type": "object",
                     "additionalProperties": {
                         "type": "integer"
                     }
                 },
                 "replace_values_threat": {
-                    "description": "Replace values when blocking an immediate threat (card 1..9 -\u003e indices 0..8)",
+                    "description": "Card values when blocking threat (high cards preferred: 1→20, 9→100)",
                     "type": "object",
                     "additionalProperties": {
                         "type": "integer"
                     }
                 },
                 "replace_when_threat": {
-                    "description": "Replace weights (contextual)",
-                    "type": "integer"
-                },
-                "w_block_path": {
-                    "description": "W₄: Blocking enemy paths (cutting opponent lines)",
-                    "type": "integer"
-                },
-                "w_build_alignment": {
-                    "description": "W₅: Building own alignments (2 or 3 in a row)",
-                    "type": "integer"
-                },
-                "w_card_cost": {
-                    "description": "W₆: Card value management (resource efficiency)",
-                    "type": "integer"
-                },
-                "w_replace_value": {
-                    "description": "W₃: Overwriting opponent cards (strategic replacement)",
+                    "description": "Replace opponent's card values (context-dependent)",
                     "type": "integer"
                 },
                 "w_threat": {
-                    "description": "W₂: Blocking opponent's immediate threat (3-in-a-row)",
+                    "description": "Threat detection (3 opponent cards in a row)",
                     "type": "integer"
                 },
                 "w_win": {
-                    "description": "W₁: Winning move detection (4-in-a-row)",
+                    "description": "Winning move (4-in-a-row)",
                     "type": "integer"
                 }
             }
