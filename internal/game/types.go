@@ -29,8 +29,8 @@ func NewBoard(size int) Board {
 		c[i] = make([]Cell, size)
 		for j := range c[i] {
 			c[i][j] = Cell{
-				Value:  0,               // No card placed yet
-				VState: CellReplaceable, // All cells are placeable by default
+				Value:  0,              // No card placed yet
+				VState: CellAccessible, // Empty cells start as accessible (0)
 			}
 		}
 	}
