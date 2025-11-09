@@ -47,8 +47,10 @@ func (m *Manager) CreateRoom(creatorName string) *shared.Room {
 			},
 		},
 	}
-	// Don't call UpdateVState on empty board - keep initial VState as CellReplaceable
-	// game.UpdateVState(&r.Board)
+
+	// Set only center cell [4,4] to VState = CellBlocked (1) for first move
+	centerX, centerY := r.Board.Size/2, r.Board.Size/2
+	r.Board.Cells[centerY][centerX].VState = game.CellBlocked
 
 	// Define available colors
 	colors := []string{"red", "green", "blue", "purple"}
@@ -96,8 +98,9 @@ func NewRoomWithID(roomID, creatorName string) *shared.Room {
 		},
 	}
 
-	// Don't call UpdateVState on empty board - keep initial VState as CellReplaceable
-	// game.UpdateVState(&r.Board)
+	// Set only center cell [4,4] to VState = CellBlocked (1) for first move
+	centerX, centerY := r.Board.Size/2, r.Board.Size/2
+	r.Board.Cells[centerY][centerX].VState = game.CellBlocked
 
 	return r
 }
