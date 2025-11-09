@@ -202,6 +202,11 @@ func (m *Manager) currentPlayer(r *shared.Room) *shared.Player {
 }
 
 func (m *Manager) ApplyMove(r *shared.Room, playerID string, x, y, card int) error {
+	// Check if game is already over
+	if r.WinnerID != nil {
+		return errors.New("game is already over")
+	}
+
 	cp := m.currentPlayer(r)
 	if cp == nil || cp.ID != playerID {
 		return errors.New("not your turn or player invalid")
@@ -275,6 +280,11 @@ func (m *Manager) ApplyMove(r *shared.Room, playerID string, x, y, card int) err
 	// Check for a winning move
 	if game.IsWinningAfter(r.Board, x, y, playerID, card) {
 		r.WinnerID = &playerID
+
+		// Save the room with winner set BEFORE broadcasting
+		m.store.SaveRoom(r)
+
+		// Broadcast game over
 		m.hub.Broadcast(r.Code, "game_over", gin.H{
 			"winner": playerID,
 			"board":  r.Board,
