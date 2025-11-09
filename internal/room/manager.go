@@ -47,7 +47,8 @@ func (m *Manager) CreateRoom(creatorName string) *shared.Room {
 			},
 		},
 	}
-	game.UpdateVState(&r.Board)
+	// Don't call UpdateVState on empty board - keep initial VState as CellReplaceable
+	// game.UpdateVState(&r.Board)
 
 	// Define available colors
 	colors := []string{"red", "green", "blue", "purple"}
@@ -95,8 +96,8 @@ func NewRoomWithID(roomID, creatorName string) *shared.Room {
 		},
 	}
 
-	// Update the board's virtual state
-	game.UpdateVState(&r.Board)
+	// Don't call UpdateVState on empty board - keep initial VState as CellReplaceable
+	// game.UpdateVState(&r.Board)
 
 	return r
 }

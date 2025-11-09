@@ -1,0 +1,64 @@
+2025/11/09 14:37:50 === Javanese Chess Server Started ===
+2025/11/09 14:37:50 Initializing Hub with RoomManager: &{store:0xc00027e680 cfg:{HTTPAddr::9000 BoardSize:9 DefaultWeights:{LegalMove:30 WWin:10000 WThreat:200 ReplaceValuesThreat:map[1:20 2:30 3:40 4:50 5:60 6:70 7:80 8:90 9:100] ReplaceValuesPotential:map[1:100 2:90 3:80 4:70 5:60 6:50 7:40 8:30 9:20] ReplaceWhenThreat:200 ReplacePotential:125 ReplacePosCenter:75 ReplacePosSide:50 BlockWhenThreat:100 BlockPotential:70 BuildAlignment2:50 BuildAlignment3:100 PlaySmallestCard:60 KeepNearCard:60}} hub:<nil>}
+2025/11/09 14:37:50 Initializing Hub with RoomManager: &{store:0xc00027e680 cfg:{HTTPAddr::9000 BoardSize:9 DefaultWeights:{LegalMove:30 WWin:10000 WThreat:200 ReplaceValuesThreat:map[1:20 2:30 3:40 4:50 5:60 6:70 7:80 8:90 9:100] ReplaceValuesPotential:map[1:100 2:90 3:80 4:70 5:60 6:50 7:40 8:30 9:20] ReplaceWhenThreat:200 ReplacePotential:125 ReplacePosCenter:75 ReplacePosSide:50 BlockWhenThreat:100 BlockPotential:70 BuildAlignment2:50 BuildAlignment3:100 PlaySmallestCard:60 KeepNearCard:60}} hub:<nil>}
+2025/11/09 14:37:50 Setting Hub in Manager: &{mu:{w:{_:{} mu:{state:0 sema:0}} writerSem:0 readerSem:0 readerCount:{_:{} v:0} readerWait:{_:{} v:0}} rooms:map[] roomManager:0xc0001d64d0}
+2025/11/09 14:37:50 listening on :9000
+2025/11/09 14:37:50 listen tcp :9000: bind: address already in use
+2025/11/09 14:38:18 === Javanese Chess Server Started ===
+2025/11/09 14:38:18 Initializing Hub with RoomManager: &{store:0xc0002bc680 cfg:{HTTPAddr::9000 BoardSize:9 DefaultWeights:{LegalMove:30 WWin:10000 WThreat:200 ReplaceValuesThreat:map[1:20 2:30 3:40 4:50 5:60 6:70 7:80 8:90 9:100] ReplaceValuesPotential:map[1:100 2:90 3:80 4:70 5:60 6:50 7:40 8:30 9:20] ReplaceWhenThreat:200 ReplacePotential:125 ReplacePosCenter:75 ReplacePosSide:50 BlockWhenThreat:100 BlockPotential:70 BuildAlignment2:50 BuildAlignment3:100 PlaySmallestCard:60 KeepNearCard:60}} hub:<nil>}
+2025/11/09 14:38:18 Initializing Hub with RoomManager: &{store:0xc0002bc680 cfg:{HTTPAddr::9000 BoardSize:9 DefaultWeights:{LegalMove:30 WWin:10000 WThreat:200 ReplaceValuesThreat:map[1:20 2:30 3:40 4:50 5:60 6:70 7:80 8:90 9:100] ReplaceValuesPotential:map[1:100 2:90 3:80 4:70 5:60 6:50 7:40 8:30 9:20] ReplaceWhenThreat:200 ReplacePotential:125 ReplacePosCenter:75 ReplacePosSide:50 BlockWhenThreat:100 BlockPotential:70 BuildAlignment2:50 BuildAlignment3:100 PlaySmallestCard:60 KeepNearCard:60}} hub:<nil>}
+2025/11/09 14:38:18 Setting Hub in Manager: &{mu:{w:{_:{} mu:{state:0 sema:0}} writerSem:0 readerSem:0 readerCount:{_:{} v:0} readerWait:{_:{} v:0}} rooms:map[] roomManager:0xc00015e4d0}
+2025/11/09 14:38:18 listening on :9000
+2025/11/09 14:38:59 HandleWS called. Hub state: &{mu:{w:{_:{} mu:{state:0 sema:0}} writerSem:0 readerSem:0 readerCount:{_:{} v:0} readerWait:{_:{} v:0}} rooms:map[] roomManager:0xc00015e4d0}
+2025/11/09 14:38:59 WebSocket connection established for room: JAI10Q
+2025/11/09 14:39:08 === WEBSOCKET HUMAN MOVE ===
+2025/11/09 14:39:08 Room: JAI10Q, PlayerID: ed23d1c2-b6a1-4eb7-8bc6-2f37c508082b, Position: (4,4), Card: 2
+2025/11/09 14:39:08 DEBUG: Board size=9, isEmpty=true, placedCards=0
+2025/11/09 14:39:08 DEBUG: Center position should be: (4,4)
+2025/11/09 14:39:08 DEBUG: Received position: (4,4)
+2025/11/09 14:39:08 DEBUG: First move detected. Board empty. Center: (4,4). Generated 3 moves
+2025/11/09 14:39:08 === MOVE VALIDATION DEBUG ===
+2025/11/09 14:39:08 Player ed23d1c2-b6a1-4eb7-8bc6-2f37c508082b attempting move at (4,4) with card 2
+2025/11/09 14:39:08 Board size: 9, Total cards on board: 0
+2025/11/09 14:39:08 Player hand: [8 2 8]
+2025/11/09 14:39:08 Generated 3 legal moves: [{X:4 Y:4 Card:8 PlayerID:ed23d1c2-b6a1-4eb7-8bc6-2f37c508082b} {X:4 Y:4 Card:2 PlayerID:ed23d1c2-b6a1-4eb7-8bc6-2f37c508082b} {X:4 Y:4 Card:8 PlayerID:ed23d1c2-b6a1-4eb7-8bc6-2f37c508082b}]
+2025/11/09 14:39:08 =============================
+2025/11/09 14:39:08 SUCCESS: Move applied successfully
+2025/11/09 14:39:08 ============================
+2025/11/09 14:39:08 Move (3,3) card=2 | threat=0 replace=0 blocks=0 formation=0 value=90 proximity=0 | TOTAL=120
+2025/11/09 14:39:08 Move (3,3) card=9 | threat=0 replace=0 blocks=0 formation=0 value=20 proximity=0 | TOTAL=50
+2025/11/09 14:39:08 Move (3,3) card=7 | threat=0 replace=0 blocks=0 formation=0 value=40 proximity=0 | TOTAL=70
+2025/11/09 14:39:08 Move (4,3) card=2 | threat=0 replace=0 blocks=0 formation=0 value=90 proximity=0 | TOTAL=120
+2025/11/09 14:39:08 Move (4,3) card=9 | threat=0 replace=0 blocks=0 formation=0 value=20 proximity=0 | TOTAL=50
+2025/11/09 14:39:08 Move (4,3) card=7 | threat=0 replace=0 blocks=0 formation=0 value=40 proximity=0 | TOTAL=70
+2025/11/09 14:39:08 Move (5,3) card=2 | threat=0 replace=0 blocks=0 formation=0 value=90 proximity=0 | TOTAL=120
+2025/11/09 14:39:08 Move (5,3) card=9 | threat=0 replace=0 blocks=0 formation=0 value=20 proximity=0 | TOTAL=50
+2025/11/09 14:39:08 Move (5,3) card=7 | threat=0 replace=0 blocks=0 formation=0 value=40 proximity=0 | TOTAL=70
+2025/11/09 14:39:08 Move (3,4) card=2 | threat=0 replace=0 blocks=0 formation=0 value=90 proximity=0 | TOTAL=120
+2025/11/09 14:39:08 Move (3,4) card=9 | threat=0 replace=0 blocks=0 formation=0 value=20 proximity=0 | TOTAL=50
+2025/11/09 14:39:08 Move (3,4) card=7 | threat=0 replace=0 blocks=0 formation=0 value=40 proximity=0 | TOTAL=70
+2025/11/09 14:39:08 Move (4,4) card=9 | threat=0 replace=125 blocks=0 formation=0 value=20 proximity=0 | TOTAL=175
+2025/11/09 14:39:08 Move (4,4) card=7 | threat=0 replace=125 blocks=0 formation=0 value=40 proximity=0 | TOTAL=195
+2025/11/09 14:39:08 Move (5,4) card=2 | threat=0 replace=0 blocks=0 formation=0 value=90 proximity=0 | TOTAL=120
+2025/11/09 14:39:08 Move (5,4) card=9 | threat=0 replace=0 blocks=0 formation=0 value=20 proximity=0 | TOTAL=50
+2025/11/09 14:39:08 Move (5,4) card=7 | threat=0 replace=0 blocks=0 formation=0 value=40 proximity=0 | TOTAL=70
+2025/11/09 14:39:08 Move (3,5) card=2 | threat=0 replace=0 blocks=0 formation=0 value=90 proximity=0 | TOTAL=120
+2025/11/09 14:39:08 Move (3,5) card=9 | threat=0 replace=0 blocks=0 formation=0 value=20 proximity=0 | TOTAL=50
+2025/11/09 14:39:08 Move (3,5) card=7 | threat=0 replace=0 blocks=0 formation=0 value=40 proximity=0 | TOTAL=70
+2025/11/09 14:39:08 Move (4,5) card=2 | threat=0 replace=0 blocks=0 formation=0 value=90 proximity=0 | TOTAL=120
+2025/11/09 14:39:08 Move (4,5) card=9 | threat=0 replace=0 blocks=0 formation=0 value=20 proximity=0 | TOTAL=50
+2025/11/09 14:39:08 Move (4,5) card=7 | threat=0 replace=0 blocks=0 formation=0 value=40 proximity=0 | TOTAL=70
+2025/11/09 14:39:08 Move (5,5) card=2 | threat=0 replace=0 blocks=0 formation=0 value=90 proximity=0 | TOTAL=120
+2025/11/09 14:39:08 Move (5,5) card=9 | threat=0 replace=0 blocks=0 formation=0 value=20 proximity=0 | TOTAL=50
+2025/11/09 14:39:08 Move (5,5) card=7 | threat=0 replace=0 blocks=0 formation=0 value=40 proximity=0 | TOTAL=70
+2025/11/09 14:39:08 === MOVE VALIDATION DEBUG ===
+2025/11/09 14:39:08 Player bot-30bac91c-800e-40e8-9c67-510553f2ccc5 attempting move at (4,4) with card 7
+2025/11/09 14:39:08 Board size: 9, Total cards on board: 1
+2025/11/09 14:39:08 Player hand: [2 9 7]
+2025/11/09 14:39:08 Generated 26 legal moves: [{X:3 Y:3 Card:2 PlayerID:bot-30bac91c-800e-40e8-9c67-510553f2ccc5} {X:3 Y:3 Card:9 PlayerID:bot-30bac91c-800e-40e8-9c67-510553f2ccc5} {X:3 Y:3 Card:7 PlayerID:bot-30bac91c-800e-40e8-9c67-510553f2ccc5} {X:4 Y:3 Card:2 PlayerID:bot-30bac91c-800e-40e8-9c67-510553f2ccc5} {X:4 Y:3 Card:9 PlayerID:bot-30bac91c-800e-40e8-9c67-510553f2ccc5} {X:4 Y:3 Card:7 PlayerID:bot-30bac91c-800e-40e8-9c67-510553f2ccc5} {X:5 Y:3 Card:2 PlayerID:bot-30bac91c-800e-40e8-9c67-510553f2ccc5} {X:5 Y:3 Card:9 PlayerID:bot-30bac91c-800e-40e8-9c67-510553f2ccc5} {X:5 Y:3 Card:7 PlayerID:bot-30bac91c-800e-40e8-9c67-510553f2ccc5} {X:3 Y:4 Card:2 PlayerID:bot-30bac91c-800e-40e8-9c67-510553f2ccc5} {X:3 Y:4 Card:9 PlayerID:bot-30bac91c-800e-40e8-9c67-510553f2ccc5} {X:3 Y:4 Card:7 PlayerID:bot-30bac91c-800e-40e8-9c67-510553f2ccc5} {X:4 Y:4 Card:9 PlayerID:bot-30bac91c-800e-40e8-9c67-510553f2ccc5} {X:4 Y:4 Card:7 PlayerID:bot-30bac91c-800e-40e8-9c67-510553f2ccc5} {X:5 Y:4 Card:2 PlayerID:bot-30bac91c-800e-40e8-9c67-510553f2ccc5} {X:5 Y:4 Card:9 PlayerID:bot-30bac91c-800e-40e8-9c67-510553f2ccc5} {X:5 Y:4 Card:7 PlayerID:bot-30bac91c-800e-40e8-9c67-510553f2ccc5} {X:3 Y:5 Card:2 PlayerID:bot-30bac91c-800e-40e8-9c67-510553f2ccc5} {X:3 Y:5 Card:9 PlayerID:bot-30bac91c-800e-40e8-9c67-510553f2ccc5} {X:3 Y:5 Card:7 PlayerID:bot-30bac91c-800e-40e8-9c67-510553f2ccc5} {X:4 Y:5 Card:2 PlayerID:bot-30bac91c-800e-40e8-9c67-510553f2ccc5} {X:4 Y:5 Card:9 PlayerID:bot-30bac91c-800e-40e8-9c67-510553f2ccc5} {X:4 Y:5 Card:7 PlayerID:bot-30bac91c-800e-40e8-9c67-510553f2ccc5} {X:5 Y:5 Card:2 PlayerID:bot-30bac91c-800e-40e8-9c67-510553f2ccc5} {X:5 Y:5 Card:9 PlayerID:bot-30bac91c-800e-40e8-9c67-510553f2ccc5} {X:5 Y:5 Card:7 PlayerID:bot-30bac91c-800e-40e8-9c67-510553f2ccc5}]
+2025/11/09 14:39:08 =============================
+2025/11/09 14:51:42 === Javanese Chess Server Started ===
+2025/11/09 14:51:42 Initializing Hub with RoomManager: &{store:0xc000199f20 cfg:{HTTPAddr::9000 BoardSize:9 DefaultWeights:{LegalMove:30 WWin:10000 WThreat:200 ReplaceValuesThreat:map[1:20 2:30 3:40 4:50 5:60 6:70 7:80 8:90 9:100] ReplaceValuesPotential:map[1:100 2:90 3:80 4:70 5:60 6:50 7:40 8:30 9:20] ReplaceWhenThreat:200 ReplacePotential:125 ReplacePosCenter:75 ReplacePosSide:50 BlockWhenThreat:100 BlockPotential:70 BuildAlignment2:50 BuildAlignment3:100 PlaySmallestCard:60 KeepNearCard:60}} hub:<nil>}
+2025/11/09 14:51:42 Initializing Hub with RoomManager: &{store:0xc000199f20 cfg:{HTTPAddr::9000 BoardSize:9 DefaultWeights:{LegalMove:30 WWin:10000 WThreat:200 ReplaceValuesThreat:map[1:20 2:30 3:40 4:50 5:60 6:70 7:80 8:90 9:100] ReplaceValuesPotential:map[1:100 2:90 3:80 4:70 5:60 6:50 7:40 8:30 9:20] ReplaceWhenThreat:200 ReplacePotential:125 ReplacePosCenter:75 ReplacePosSide:50 BlockWhenThreat:100 BlockPotential:70 BuildAlignment2:50 BuildAlignment3:100 PlaySmallestCard:60 KeepNearCard:60}} hub:<nil>}
+2025/11/09 14:51:42 Setting Hub in Manager: &{mu:{w:{_:{} mu:{state:0 sema:0}} writerSem:0 readerSem:0 readerCount:{_:{} v:0} readerWait:{_:{} v:0}} rooms:map[] roomManager:0xc0001d64d0}
+2025/11/09 14:51:42 listening on :9000
