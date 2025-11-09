@@ -31,6 +31,11 @@ func SetupRouter(mgr *room.Manager, s room.Store, hub *ws.Hub) *gin.Engine {
 		configGroup.GET("/weights/room", configHandler.GetRoomWeightsHandler)
 	}
 
+	// Debug route to view logs
+	r.GET("/api/debug/logs", func(c *gin.Context) {
+		c.File("javanese-chess.log")
+	})
+
 	// WebSocket
 	r.GET("/ws", hub.HandleWS)
 

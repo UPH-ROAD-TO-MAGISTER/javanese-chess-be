@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	httpapi "javanese-chess/internal/api/http"
 	"javanese-chess/internal/api/ws"
 	"javanese-chess/internal/config"
@@ -8,6 +9,7 @@ import (
 	"javanese-chess/internal/store"
 	"log"
 	"net/http"
+	"os"
 
 	// swagger packages
 	_ "javanese-chess/docs"
@@ -22,6 +24,18 @@ import (
 // @contact.email backend@yourcompany.com
 // @BasePath /
 func main() {
+	// Setup logging to both file and console
+	logFile, err := os.OpenFile("javanese-chess.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		log.Printf("Warning: Could not open log file: %v. Logging to console only.", err)
+	} else {
+		defer logFile.Close()
+		// Log to both file and console
+		multiWriter := io.MultiWriter(os.Stdout, logFile)
+		log.SetOutput(multiWriter)
+		log.Println("=== Javanese Chess Server Started ===")
+	}
+
 	cfg := config.Load()
 	mem := store.NewMemoryStore()
 	hub := ws.NewHub(room.NewManager(mem, *cfg, nil))

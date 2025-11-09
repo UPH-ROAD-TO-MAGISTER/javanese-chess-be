@@ -218,8 +218,23 @@ func (m *Manager) ApplyMove(r *shared.Room, playerID string, x, y, card int) err
 
 	// Ensure the move is legal
 	legalMoves := game.GenerateLegalMoves(&r.Board, cp.Hand, playerID)
+
+	// Debug: Check board state
+	totalCards := 0
+	for y := 0; y < r.Board.Size; y++ {
+		for x := 0; x < r.Board.Size; x++ {
+			if r.Board.Cells[y][x].Value != 0 {
+				totalCards++
+			}
+		}
+	}
+
+	log.Printf("=== MOVE VALIDATION DEBUG ===")
 	log.Printf("Player %s attempting move at (%d,%d) with card %d", playerID, x, y, card)
-	log.Printf("Legal moves: %+v", legalMoves)
+	log.Printf("Board size: %d, Total cards on board: %d", r.Board.Size, totalCards)
+	log.Printf("Player hand: %v", cp.Hand)
+	log.Printf("Generated %d legal moves: %+v", len(legalMoves), legalMoves)
+	log.Printf("=============================")
 
 	legal := false
 	for _, mv := range legalMoves {
@@ -229,6 +244,7 @@ func (m *Manager) ApplyMove(r *shared.Room, playerID string, x, y, card int) err
 		}
 	}
 	if !legal {
+		log.Printf("ERROR: Move (%d,%d) card %d is NOT in legal moves list!", x, y, card)
 		return errors.New("illegal move")
 	}
 
