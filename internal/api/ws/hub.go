@@ -141,27 +141,54 @@ func (h *Hub) handleHumanMove(roomCode string, data interface{}) {
 
 	rawData, err := json.Marshal(data)
 	if err != nil {
-		log.Printf("Failed to marshal move data: %v", err)
+		log.Printf("ERROR: Failed to marshal move data: %v", err)
 		return
 	}
 
 	if err := json.Unmarshal(rawData, &move); err != nil {
-		log.Printf("Invalid move data: %v", err)
+		log.Printf("ERROR: Invalid move data: %v", err)
 		return
 	}
+
+	log.Printf("=== WEBSOCKET HUMAN MOVE ===")
+	log.Printf("Room: %s, PlayerID: %s, Position: (%d,%d), Card: %d", roomCode, move.PlayerID, move.X, move.Y, move.Card)
 
 	// Get the room
 	room, ok := h.roomManager.Get(roomCode)
 	if !ok {
-		log.Printf("Room not found: %s", roomCode)
+		log.Printf("ERROR: Room not found: %s", roomCode)
+		h.Broadcast(roomCode, "error", map[string]interface{}{
+			"message": "Room not found",
+		})
 		return
 	}
 
-	// Apply the human move
+	// Log board state for debugging
+	boardEmpty := true
+	placedCount := 0
+	for y := 0; y < room.Board.Size; y++ {
+		for x := 0; x < room.Board.Size; x++ {
+			if room.Board.Cells[y][x].Value != 0 {
+				boardEmpty = false
+				placedCount++
+				log.Printf("DEBUG: Card found at (%d,%d): value=%d, owner=%s",
+					x, y, room.Board.Cells[y][x].Value, room.Board.Cells[y][x].OwnerID)
+			}
+		}
+	}
+	log.Printf("DEBUG: Board size=%d, isEmpty=%v, placedCards=%d", room.Board.Size, boardEmpty, placedCount)
+	log.Printf("DEBUG: Center position should be: (%d,%d)", room.Board.Size/2, room.Board.Size/2)
+	log.Printf("DEBUG: Received position: (%d,%d)", move.X, move.Y) // Apply the human move
 	if err := h.roomManager.ApplyMove(room, move.PlayerID, move.X, move.Y, move.Card); err != nil {
-		log.Printf("Failed to apply move: %v", err)
+		log.Printf("ERROR: Failed to apply move: %v", err)
+		h.Broadcast(roomCode, "error", map[string]interface{}{
+			"message": err.Error(),
+		})
 		return
 	}
+
+	log.Printf("SUCCESS: Move applied successfully")
+	log.Printf("============================")
 
 	// Broadcast the updated game state
 	h.Broadcast(roomCode, "move", map[string]interface{}{
