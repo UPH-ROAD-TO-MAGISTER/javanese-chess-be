@@ -7,6 +7,12 @@ type CreateRoomRequest struct {
 	PlayerName string `json:"player_name"`
 }
 
+// JoinRoomRequest represents the payload for joining an existing room.
+type JoinRoomRequest struct {
+	RoomCode   string `json:"room_code"`
+	PlayerName string `json:"player_name"`
+}
+
 // PlayRequest represents the payload for /play.
 type PlayRequest struct {
 	NumberPlayer int                      `json:"number_player"`

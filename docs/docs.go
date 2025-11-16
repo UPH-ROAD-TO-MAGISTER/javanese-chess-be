@@ -69,6 +69,41 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/join": {
+            "post": {
+                "description": "Join an existing room with a room code",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Room"
+                ],
+                "summary": "Join an existing room",
+                "parameters": [
+                    {
+                        "description": "Join room info",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/http.JoinRoomRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/api/play": {
             "post": {
                 "description": "Initialize room (create if missing), add bots and apply provided heuristic weights in one request",
@@ -174,6 +209,17 @@ const docTemplate = `{
                 "w_win": {
                     "description": "Winning move (4-in-a-row)",
                     "type": "integer"
+                }
+            }
+        },
+        "http.JoinRoomRequest": {
+            "type": "object",
+            "properties": {
+                "player_name": {
+                    "type": "string"
+                },
+                "room_code": {
+                    "type": "string"
                 }
             }
         },

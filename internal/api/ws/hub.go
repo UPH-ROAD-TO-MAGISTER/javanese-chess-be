@@ -210,33 +210,52 @@ func (h *Hub) handleHumanMove(roomCode string, data interface{}) {
 }
 
 func (h *Hub) handleBotMove(roomCode string) {
-	// Get the room
-	room, ok := h.roomManager.Get(roomCode)
-	if !ok {
-		log.Printf("Room not found: %s", roomCode)
-		return
-	}
+	// Keep processing bot moves while the current player is a bot
+	for {
+		// Get the room
+		room, ok := h.roomManager.Get(roomCode)
+		if !ok {
+			log.Printf("Room not found: %s", roomCode)
+			return
+		}
 
-	// Get the current player
-	currentPlayer := room.Players[room.TurnIdx]
-	if !currentPlayer.IsBot {
-		log.Printf("Current player is not a bot: %s", currentPlayer.ID)
-		return
-	}
+		// Check if game is over
+		if room.WinnerID != nil {
+			log.Printf("Game is over, winner: %s", *room.WinnerID)
+			return
+		}
 
-	// Trigger the bot's move
-	botMove, err := h.roomManager.BotMove(room, currentPlayer.ID)
-	if err != nil {
-		log.Printf("Failed to process bot move: %v", err)
-		return
-	}
+		// Get the current player
+		currentPlayer := room.Players[room.TurnIdx]
+		if !currentPlayer.IsBot {
+			// Current player is human, stop the bot loop
+			log.Printf("Current player is not a bot: %s", currentPlayer.ID)
+			return
+		}
 
-	// Broadcast the bot's move
-	h.Broadcast(roomCode, "bot_move", map[string]interface{}{
-		"bot_id": currentPlayer.ID,
-		"x":      botMove.X,
-		"y":      botMove.Y,
-		"card":   botMove.Card,
-		"board":  room.Board,
-	})
+		// Trigger the bot's move
+		botMove, err := h.roomManager.BotMove(room, currentPlayer.ID)
+		if err != nil {
+			log.Printf("Failed to process bot move: %v", err)
+			return
+		}
+
+		// Broadcast the bot's move
+		h.Broadcast(roomCode, "bot_move", map[string]interface{}{
+			"bot_id":    currentPlayer.ID,
+			"x":         botMove.X,
+			"y":         botMove.Y,
+			"card":      botMove.Card,
+			"board":     room.Board,
+			"next_turn": room.Players[room.TurnIdx].ID,
+		})
+
+		// Check again if game is over after this bot move
+		if room.WinnerID != nil {
+			log.Printf("Game is over after bot move, winner: %s", *room.WinnerID)
+			return
+		}
+
+		// Continue the loop - if next player is also a bot, it will process automatically
+	}
 }

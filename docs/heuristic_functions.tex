@@ -1,0 +1,221 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\usepackage{enumitem}
+
+\geometry{margin=1in}
+
+\title{Javanese Chess Bot AI: Heuristic Activation Functions}
+\author{Heuristic Evaluation System}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Overview}
+
+The bot AI evaluation system uses 7 activation functions to calculate the heuristic score for each possible move. The total score is calculated as:
+
+\begin{equation}
+    Score_{total} = W_{base} + \sum_{i=1}^{7} f_i(board, move)
+\end{equation}
+
+where $W_{base} = 30$ is the base legal move weight.
+
+\section{Activation Functions}
+
+\subsection{$f_{win}$: Winning Move Detection}
+
+Detects if placing a card at position $(x, y)$ creates a 4-in-a-row alignment.
+
+\begin{equation}
+    f_{win}(b, x, y, p, c) = \begin{cases}
+        W_{win} = 10000 & \text{if } \exists \text{ direction } d \text{ where } \text{count}_d(x, y, p) \geq 4 \\
+        0 & \text{otherwise}
+    \end{cases}
+\end{equation}
+
+where:
+\begin{itemize}[noitemsep]
+    \item $b$ = board state
+    \item $(x, y)$ = move position
+    \item $p$ = player ID
+    \item $c$ = card value
+    \item $d \in \{horizontal, vertical, diagonal_{\nwarrow}, diagonal_{\nearrow}\}$
+    \item $\text{count}_d(x, y, p)$ = number of consecutive cards in direction $d$ owned by player $p$
+\end{itemize}
+
+\subsection{$f_{threat}$: Threat Detection and Blocking}
+
+Detects if an opponent has 3-in-a-row and this move blocks it.
+
+\begin{equation}
+    f_{threat}(b, x, y, p) = \begin{cases}
+        W_{threat} = 200 & \text{if } \exists o \in O : \text{blocks3InARow}(b, x, y, o) \\
+        0 & \text{otherwise}
+    \end{cases}
+\end{equation}
+
+where:
+\begin{itemize}[noitemsep]
+    \item $O$ = set of all opponent player IDs
+    \item $\text{blocks3InARow}(b, x, y, o)$ returns true if placing at $(x, y)$ blocks opponent $o$'s 3-in-a-row
+\end{itemize}
+
+\subsection{$f_{replace}$: Card Replacement Value}
+
+Calculates the value of replacing an opponent's card.
+
+\begin{equation}
+    f_{replace}(b, x, y, p, T, W) = \begin{cases}
+        0 & \text{if } \text{cell}(x, y) \text{ is empty or owned by } p \\
+        R_{base}(T) + B_{pos}(x, y) & \text{otherwise}
+    \end{cases}
+\end{equation}
+
+where:
+\begin{equation}
+    R_{base}(T) = \begin{cases}
+        W_{replace\_threat} = 200 & \text{if } T = \text{true (is threat context)} \\
+        W_{replace\_potential} = 125 & \text{otherwise}
+    \end{cases}
+\end{equation}
+
+and the position bonus:
+\begin{equation}
+    B_{pos}(x, y) = \begin{cases}
+        W_{pos\_center} = 75 & \text{if card is in center of opponent's line} \\
+        W_{pos\_side} = 50 & \text{if card is at side of opponent's line} \\
+        0 & \text{otherwise}
+    \end{cases}
+\end{equation}
+
+\subsection{$f_{blocks}$: Blocking Opponent's Formation}
+
+Evaluates blocking potential against opponent formations.
+
+\begin{equation}
+    f_{blocks}(b, x, y, p, T, W) = \max_{o \in O} \begin{cases}
+        W_{block\_threat} = 100 & \text{if blocks opponent $o$'s 3-in-a-row} \\
+        W_{block\_potential} = 70 & \text{if blocks opponent $o$'s 2-in-a-row} \\
+        0 & \text{otherwise}
+    \end{cases}
+\end{equation}
+
+\subsection{$f_{formation}$: Building Own Alignments}
+
+Rewards creating alignments of player's own cards.
+
+\begin{equation}
+    f_{formation}(b, x, y, p, c, W) = \begin{cases}
+        W_{align3} = 100 & \text{if placement creates 3-in-a-row} \\
+        W_{align2} = 50 & \text{if placement creates 2-in-a-row} \\
+        0 & \text{otherwise}
+    \end{cases}
+\end{equation}
+
+where alignment count is calculated as:
+\begin{equation}
+    \text{alignment}(x, y, p, d) = 1 + \text{count}_{\text{forward}}(x, y, p, d) + \text{count}_{\text{backward}}(x, y, p, d)
+\end{equation}
+
+\subsection{$f_{value}$: Card Value Management}
+
+Assigns strategic value based on card number and context.
+
+\begin{equation}
+    f_{value}(b, x, y, c, p, T, W) = \begin{cases}
+        W_{threat\_value}[c] & \text{if } T = \text{true and replacing opponent} \\
+        W_{potential\_value}[c] & \text{otherwise}
+    \end{cases}
+\end{equation}
+
+where the weight tables are:
+\begin{align}
+    W_{threat\_value} &= \{1: 20, 2: 30, 3: 40, 4: 50, 5: 60, 6: 70, 7: 80, 8: 90, 9: 100\} \\
+    W_{potential\_value} &= \{1: 100, 2: 90, 3: 80, 4: 70, 5: 60, 6: 50, 7: 40, 8: 30, 9: 20\}
+\end{align}
+
+This implements a strategy where:
+\begin{itemize}[noitemsep]
+    \item When blocking threats: use high-value cards (9 is preferred)
+    \item When building formations: use low-value cards (1 is preferred)
+\end{itemize}
+
+\subsection{$f_{proximity}$: Adjacency to Own Cards}
+
+Encourages placing cards adjacent to existing owned cards.
+
+\begin{equation}
+    f_{proximity}(b, x, y, p, W) = \begin{cases}
+        W_{proximity} = 60 & \text{if } \exists (x', y') \in N(x, y) : \text{owner}(x', y') = p \\
+        0 & \text{otherwise}
+    \end{cases}
+\end{equation}
+
+where $N(x, y)$ is the 8-neighbor set:
+\begin{equation}
+    N(x, y) = \{(x \pm 1, y), (x, y \pm 1), (x \pm 1, y \pm 1)\}
+\end{equation}
+
+\section{Complete Evaluation Formula}
+
+The complete heuristic evaluation for a move is:
+
+\begin{align}
+    Score(b, x, y, c, p) = &\ 30 \nonumber \\
+    &+ f_{win}(b, x, y, p, c) \nonumber \\
+    &+ f_{threat}(b, x, y, p) \nonumber \\
+    &+ f_{replace}(b, x, y, p, T, W) \nonumber \\
+    &+ f_{blocks}(b, x, y, p, T, W) \nonumber \\
+    &+ f_{formation}(b, x, y, p, c, W) \nonumber \\
+    &+ f_{value}(b, x, y, c, p, T, W) \nonumber \\
+    &+ f_{proximity}(b, x, y, p, W)
+\end{align}
+
+\section{Implementation Notes}
+
+\begin{enumerate}
+    \item If $f_{win}$ returns a non-zero value, the evaluation immediately returns with a score of 10,030, as winning moves take absolute priority.
+    
+    \item The threat context flag $T$ is determined by $f_{threat}$ and affects both $f_{replace}$ and $f_{value}$ calculations.
+    
+    \item All functions temporarily modify the board state to evaluate potential outcomes, then restore the original state.
+    
+    \item The bot selects the move with the highest total score:
+    \begin{equation}
+        \text{best\_move} = \argmax_{(x, y, c) \in M} Score(b, x, y, c, p)
+    \end{equation}
+    where $M$ is the set of all legal moves.
+\end{enumerate}
+
+\section{Weight Configuration}
+
+All weights are configurable through the system configuration:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|c|}
+\hline
+\textbf{Parameter} & \textbf{Default Value} \\
+\hline
+$W_{base}$ (Legal Move) & 30 \\
+$W_{win}$ (Winning Move) & 10,000 \\
+$W_{threat}$ (Threat Detection) & 200 \\
+$W_{replace\_threat}$ & 200 \\
+$W_{replace\_potential}$ & 125 \\
+$W_{pos\_center}$ & 75 \\
+$W_{pos\_side}$ & 50 \\
+$W_{block\_threat}$ & 100 \\
+$W_{block\_potential}$ & 70 \\
+$W_{align3}$ & 100 \\
+$W_{align2}$ & 50 \\
+$W_{proximity}$ & 60 \\
+\hline
+\end{tabular}
+\caption{Heuristic Weight Configuration}
+\end{table}
+
+\end{document}

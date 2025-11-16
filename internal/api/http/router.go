@@ -22,6 +22,7 @@ func SetupRouter(mgr *room.Manager, s room.Store, hub *ws.Hub) *gin.Engine {
 
 	// Existing handlers (not using store directly)
 	r.POST("/api/play", PlayHandler(mgr, hub))
+	r.POST("/api/join", JoinRoomHandler(mgr, hub))
 
 	// Config routes (room-based)
 	configHandler := NewConfigHandler(s, hub)

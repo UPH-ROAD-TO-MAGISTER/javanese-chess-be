@@ -82,3 +82,55 @@ func PlayHandler(rm *room.Manager, hub *ws.Hub) gin.HandlerFunc {
 		})
 	}
 }
+
+// @Summary Join an existing room
+// @Description Join an existing room with a room code
+// @Tags Room
+// @Accept json
+// @Produce json
+// @Param request body JoinRoomRequest true "Join room info"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/join [post]
+func JoinRoomHandler(rm *room.Manager, hub *ws.Hub) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var joinRequest JoinRoomRequest
+		if err := c.BindJSON(&joinRequest); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
+			return
+		}
+
+		if joinRequest.RoomCode == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "room_code is required"})
+			return
+		}
+
+		if joinRequest.PlayerName == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "player_name is required"})
+			return
+		}
+
+		// Join the room
+		rx, err := rm.JoinRoom(joinRequest.RoomCode, joinRequest.PlayerName)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Notify all clients in the room that a new player joined
+		hub.Broadcast(rx.Code, "player-joined", gin.H{
+			"room":    rx,
+			"message": joinRequest.PlayerName + " has joined the game",
+		})
+
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"data": gin.H{
+				"room_code":  rx.Code,
+				"turn_order": rx.TurnOrder,
+				"players":    rx.Players,
+				"board":      rx.Board,
+				"status":     "playing",
+			},
+		})
+	}
+}

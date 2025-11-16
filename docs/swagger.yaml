@@ -54,6 +54,13 @@ definitions:
         description: Winning move (4-in-a-row)
         type: integer
     type: object
+  http.JoinRoomRequest:
+    properties:
+      player_name:
+        type: string
+      room_code:
+        type: string
+    type: object
   http.PlayRequest:
     properties:
       number_bot:
@@ -110,6 +117,29 @@ paths:
       summary: Get room heuristic weights
       tags:
       - Config
+  /api/join:
+    post:
+      consumes:
+      - application/json
+      description: Join an existing room with a room code
+      parameters:
+      - description: Join room info
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.JoinRoomRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Join an existing room
+      tags:
+      - Room
   /api/play:
     post:
       consumes:

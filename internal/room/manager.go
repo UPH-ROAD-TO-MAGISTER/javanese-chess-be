@@ -125,6 +125,94 @@ func (m *Manager) CreateRoomWithID(roomID, playerName string) *shared.Room {
 	return room
 }
 
+func (m *Manager) JoinRoom(roomCode string, playerName string) (*shared.Room, error) {
+	// Get the room
+	r, ok := m.store.GetRoom(roomCode)
+	if !ok {
+		return nil, errors.New("room not found")
+	}
+
+	// Check if game has already started (board has cards)
+	hasCards := false
+	for y := 0; y < r.Board.Size; y++ {
+		for x := 0; x < r.Board.Size; x++ {
+			if r.Board.Cells[y][x].Value != 0 {
+				hasCards = true
+				break
+			}
+		}
+		if hasCards {
+			break
+		}
+	}
+
+	if hasCards {
+		return nil, errors.New("game has already started")
+	}
+
+	// Check max players (4 players max)
+	if len(r.Players) >= 4 {
+		return nil, errors.New("room is full")
+	}
+
+	// Check if player name already exists
+	for _, p := range r.Players {
+		if p.Name == playerName {
+			return nil, errors.New("player name already exists in this room")
+		}
+	}
+
+	// Generate deck and hand for new player
+	deck := GenerateDeck()
+	hand := deck[:3]
+	deck = deck[3:]
+
+	// Assign color (use available colors)
+	colors := config.DefaultPlayerColors
+	usedColors := make(map[string]bool)
+	for _, p := range r.Players {
+		usedColors[p.Color] = true
+	}
+
+	playerColor := colors[0] // Default
+	for _, color := range colors {
+		if !usedColors[color] {
+			playerColor = color
+			break
+		}
+	}
+
+	// Add new player
+	newPlayer := shared.Player{
+		ID:    uuid.NewString(),
+		Name:  playerName,
+		IsBot: false,
+		Hand:  hand,
+		Deck:  deck,
+		Color: playerColor,
+	}
+
+	r.Players = append(r.Players, newPlayer)
+
+	// Reshuffle turn order to include new player fairly
+	// This ensures new joiners aren't always at the back
+	randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
+	randGen.Shuffle(len(r.Players), func(i, j int) {
+		r.Players[i], r.Players[j] = r.Players[j], r.Players[i]
+	})
+
+	// Update turn order based on reshuffled players
+	r.TurnOrder = make([]string, len(r.Players))
+	for i, player := range r.Players {
+		r.TurnOrder[i] = player.ID
+	}
+
+	// Save updated room
+	m.store.SaveRoom(r)
+
+	return r, nil
+}
+
 func (m *Manager) AddBots(r *shared.Room, n int) {
 	// Use the DefaultPlayerColors from the config package
 	colors := config.DefaultPlayerColors
