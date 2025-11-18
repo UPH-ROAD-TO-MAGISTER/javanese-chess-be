@@ -233,7 +233,11 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "player_name": {
-                    "type": "string"
+                    "description": "Changed to array",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "room_id": {
                     "type": "string"

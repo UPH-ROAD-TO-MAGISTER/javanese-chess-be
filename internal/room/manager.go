@@ -38,6 +38,7 @@ func (m *Manager) CreateRoom(creatorName string) *shared.Room {
 		CreatedAt:  time.Now(),
 		Cfg:        m.cfg,
 		RoomConfig: config.NewRoomConfig(code),
+		Status:     "playing", // Old flow: immediately playing
 		Players: []shared.Player{
 			{
 				ID:    uuid.NewString(),
@@ -57,6 +58,44 @@ func (m *Manager) CreateRoom(creatorName string) *shared.Room {
 
 	// Assign a color to the human player
 	r.Players[0].Color = colors[0]
+
+	m.store.SaveRoom(r)
+	return r
+}
+
+// CreateLobbyRoom creates a room in lobby state (waiting for players)
+func (m *Manager) CreateLobbyRoom(roomCode string, roomMasterName string) *shared.Room {
+	// Generate deck and hand for room master
+	deck := GenerateDeck()
+	hand := deck[:3]
+	deck = deck[3:]
+
+	// Define available colors
+	colors := config.DefaultPlayerColors
+
+	r := &shared.Room{
+		Code:       roomCode,
+		Board:      game.NewBoard(m.cfg.BoardSize),
+		TurnIdx:    0,
+		CreatedAt:  time.Now(),
+		Cfg:        m.cfg,
+		RoomConfig: config.NewRoomConfig(roomCode),
+		Status:     "lobby",
+		Players: []shared.Player{
+			{
+				ID:    uuid.NewString(),
+				Name:  roomMasterName,
+				IsBot: false,
+				Hand:  hand,
+				Deck:  deck,
+				Color: colors[0], // First player gets first color
+			},
+		},
+	}
+
+	// Set only center cell [4,4] to VState = CellBlocked (1) for first move
+	centerX, centerY := r.Board.Size/2, r.Board.Size/2
+	r.Board.Cells[centerY][centerX].VState = game.CellBlocked
 
 	m.store.SaveRoom(r)
 	return r
@@ -102,6 +141,8 @@ func NewRoomWithID(roomID, creatorName string) *shared.Room {
 	centerX, centerY := r.Board.Size/2, r.Board.Size/2
 	r.Board.Cells[centerY][centerX].VState = game.CellBlocked
 
+	r.Status = "playing" // Old flow: immediately playing
+
 	return r
 }
 
@@ -132,21 +173,8 @@ func (m *Manager) JoinRoom(roomCode string, playerName string) (*shared.Room, er
 		return nil, errors.New("room not found")
 	}
 
-	// Check if game has already started (board has cards)
-	hasCards := false
-	for y := 0; y < r.Board.Size; y++ {
-		for x := 0; x < r.Board.Size; x++ {
-			if r.Board.Cells[y][x].Value != 0 {
-				hasCards = true
-				break
-			}
-		}
-		if hasCards {
-			break
-		}
-	}
-
-	if hasCards {
+	// Check if game has already started using status field
+	if r.Status == "playing" {
 		return nil, errors.New("game has already started")
 	}
 
@@ -548,4 +576,10 @@ func (m *Manager) Rank(r *shared.Room) []RankRow {
 		}
 	}
 	return out
+}
+
+// StartGame transitions a room from lobby to playing state
+func (m *Manager) StartGame(r *shared.Room) {
+	r.Status = "playing"
+	m.store.SaveRoom(r)
 }

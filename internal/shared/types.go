@@ -17,6 +17,7 @@ type Room struct {
 	Cfg        config.Config      `json:"-"`
 	RoomConfig *config.RoomConfig `json:"room_config,omitempty"`
 	TurnOrder  []string           `json:"turn_order"`
+	Status     string             `json:"status"` // "lobby" or "playing"
 }
 
 type Move struct {

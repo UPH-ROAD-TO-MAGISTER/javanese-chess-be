@@ -18,7 +18,7 @@ type PlayRequest struct {
 	NumberPlayer int                      `json:"number_player"`
 	NumberBot    int                      `json:"number_bot"`
 	RoomID       string                   `json:"room_id"`
-	PlayerName   string                   `json:"player_name"`
+	PlayerName   []string                 `json:"player_name"` // Changed to array
 	Weights      *config.HeuristicWeights `json:"weights"`
 }
 

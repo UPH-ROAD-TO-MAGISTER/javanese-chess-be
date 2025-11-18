@@ -6,7 +6,6 @@ import (
 	"javanese-chess/internal/api/ws"
 	"javanese-chess/internal/config"
 	"javanese-chess/internal/room"
-	"javanese-chess/internal/shared"
 
 	"github.com/gin-gonic/gin"
 )
@@ -27,30 +26,36 @@ func PlayHandler(rm *room.Manager, hub *ws.Hub) gin.HandlerFunc {
 			return
 		}
 
-		if playRequest.NumberBot <= 0 {
-			playRequest.NumberBot = 1
+		if playRequest.NumberBot < 0 {
+			playRequest.NumberBot = 0
 		}
 
-		// Try to get an existing room by the provided RoomID
-		var rx *shared.Room
-		if playRequest.RoomID != "" {
-			if r, ok := rm.Get(playRequest.RoomID); ok {
-				rx = r
-			} else {
-				// If the room doesn't exist, create a new one with the given RoomID
-				rx = rm.CreateRoomWithID(playRequest.RoomID, playRequest.PlayerName)
-			}
+		// Validate RoomID is provided
+		if playRequest.RoomID == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "room_id is required"})
+			return
 		}
 
-		// If room not found, create one (player name optional)
-		if rx == nil {
-			if playRequest.PlayerName == "" {
-				playRequest.PlayerName = "Player"
-			}
-			rx = rm.CreateRoom(playRequest.PlayerName)
+		// Get existing room (must exist from room_created event)
+		rx, ok := rm.Get(playRequest.RoomID)
+		if !ok {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "room not found"})
+			return
 		}
 
-		// Add bots
+		// Validate room is in lobby state
+		if rx.Status != "lobby" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "game has already started"})
+			return
+		}
+
+		// Validate player names are provided
+		if len(playRequest.PlayerName) == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "player_name array is required"})
+			return
+		}
+
+		// Add bots if requested
 		if playRequest.NumberBot > 0 {
 			rm.AddBots(rx, playRequest.NumberBot)
 		}
@@ -67,8 +72,17 @@ func PlayHandler(rm *room.Manager, hub *ws.Hub) gin.HandlerFunc {
 			rx.RoomConfig.SetWeights(*playRequest.Weights)
 		}
 
-		// Notify clients of the initial game state
-		hub.Broadcast(rx.Code, "state-updated", gin.H{"room": rx})
+		// Start the game (change status from lobby to playing)
+		rm.StartGame(rx)
+
+		// Broadcast game started to all clients
+		hub.Broadcast(rx.Code, "game_started", gin.H{
+			"room_code":  rx.Code,
+			"turn_order": rx.TurnOrder,
+			"players":    rx.Players,
+			"board":      rx.Board,
+			"status":     "playing",
+		})
 
 		c.JSON(http.StatusOK, gin.H{
 			"success": true,
@@ -109,6 +123,19 @@ func JoinRoomHandler(rm *room.Manager, hub *ws.Hub) gin.HandlerFunc {
 			return
 		}
 
+		// Validate room exists
+		rx, ok := rm.Get(joinRequest.RoomCode)
+		if !ok {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "room not found"})
+			return
+		}
+
+		// Validate room is in lobby state
+		if rx.Status != "lobby" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "game has already started"})
+			return
+		}
+
 		// Join the room
 		rx, err := rm.JoinRoom(joinRequest.RoomCode, joinRequest.PlayerName)
 		if err != nil {
@@ -116,10 +143,9 @@ func JoinRoomHandler(rm *room.Manager, hub *ws.Hub) gin.HandlerFunc {
 			return
 		}
 
-		// Notify all clients in the room that a new player joined
-		hub.Broadcast(rx.Code, "player-joined", gin.H{
-			"room":    rx,
-			"message": joinRequest.PlayerName + " has joined the game",
+		// Broadcast only the new player's name
+		hub.Broadcast(rx.Code, "new_player_joined", gin.H{
+			"player_name": joinRequest.PlayerName,
 		})
 
 		c.JSON(http.StatusOK, gin.H{

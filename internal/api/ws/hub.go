@@ -34,10 +34,7 @@ func (h *Hub) HandleWS(c *gin.Context) {
 	log.Printf("HandleWS called. Hub state: %+v", h)
 
 	roomCode := c.Query("room_code")
-	if roomCode == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "missing room_code"})
-		return
-	}
+	// Room code is now optional - it can be provided later via room_created action
 
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
@@ -45,19 +42,26 @@ func (h *Hub) HandleWS(c *gin.Context) {
 		return
 	}
 
-	log.Printf("WebSocket connection established for room: %s", roomCode)
+	log.Printf("WebSocket connection established, initial room: %s", roomCode)
 
-	// Add the connection to the room
-	h.mu.Lock()
-	if _, ok := h.rooms[roomCode]; !ok {
-		h.rooms[roomCode] = make(map[*websocket.Conn]struct{})
+	// Add the connection to the room if room_code was provided
+	if roomCode != "" {
+		h.mu.Lock()
+		if _, ok := h.rooms[roomCode]; !ok {
+			h.rooms[roomCode] = make(map[*websocket.Conn]struct{})
+		}
+		h.rooms[roomCode][conn] = struct{}{}
+		h.mu.Unlock()
 	}
-	h.rooms[roomCode][conn] = struct{}{}
-	h.mu.Unlock()
+
+	// Track current room for this connection
+	currentRoom := roomCode
 
 	defer func() {
 		h.mu.Lock()
-		delete(h.rooms[roomCode], conn)
+		if currentRoom != "" {
+			delete(h.rooms[currentRoom], conn)
+		}
 		h.mu.Unlock()
 		_ = conn.Close()
 	}()
@@ -74,19 +78,25 @@ func (h *Hub) HandleWS(c *gin.Context) {
 
 		// Process the action
 		switch msg.Action {
+		case "room_created":
+			// Extract room code from data
+			newRoomCode := h.handleRoomCreated(conn, &currentRoom, msg.Data)
+			if newRoomCode != "" {
+				currentRoom = newRoomCode
+			}
 		case "human_move":
-			h.handleHumanMove(roomCode, msg.Data)
+			h.handleHumanMove(currentRoom, msg.Data)
 		case "bot_move":
 			// Trigger bot move explicitly if requested (optional feature)
-			room, ok := h.roomManager.Get(roomCode)
+			room, ok := h.roomManager.Get(currentRoom)
 			if !ok {
-				log.Printf("Room not found: %s", roomCode)
+				log.Printf("Room not found: %s", currentRoom)
 				continue
 			}
 			currentPlayer := room.Players[room.TurnIdx]
 			if currentPlayer.IsBot {
 				if botMove, err := h.roomManager.BotMove(room, currentPlayer.ID); err == nil {
-					h.Broadcast(roomCode, "bot_move", gin.H{
+					h.Broadcast(currentRoom, "bot_move", gin.H{
 						"bot_id": currentPlayer.ID,
 						"x":      botMove.X,
 						"y":      botMove.Y,
@@ -207,6 +217,90 @@ func (h *Hub) handleHumanMove(roomCode string, data interface{}) {
 			h.handleBotMove(roomCode)
 		}()
 	}
+}
+
+func (h *Hub) handleRoomCreated(conn *websocket.Conn, currentRoom *string, data interface{}) string {
+	// Extract room code and player name from data
+	var roomData struct {
+		RoomCode   string `json:"room_code"`
+		PlayerName string `json:"player_name"`
+	}
+
+	rawData, err := json.Marshal(data)
+	if err != nil {
+		log.Printf("ERROR: Failed to marshal room data: %v", err)
+		conn.WriteJSON(map[string]interface{}{
+			"action": "error",
+			"data":   map[string]interface{}{"message": "Invalid room data"},
+		})
+		return ""
+	}
+
+	if err := json.Unmarshal(rawData, &roomData); err != nil {
+		log.Printf("ERROR: Invalid room data: %v", err)
+		conn.WriteJSON(map[string]interface{}{
+			"action": "error",
+			"data":   map[string]interface{}{"message": "Invalid room data format"},
+		})
+		return ""
+	}
+
+	roomCode := roomData.RoomCode
+	if roomCode == "" {
+		log.Printf("ERROR: Room code not provided in data")
+		conn.WriteJSON(map[string]interface{}{
+			"action": "error",
+			"data":   map[string]interface{}{"message": "room_code is required"},
+		})
+		return ""
+	}
+
+	playerName := roomData.PlayerName
+	if playerName == "" {
+		log.Printf("ERROR: Player name not provided in data")
+		conn.WriteJSON(map[string]interface{}{
+			"action": "error",
+			"data":   map[string]interface{}{"message": "player_name is required"},
+		})
+		return ""
+	}
+
+	log.Printf("=== ROOM CREATED VIA WEBSOCKET ===")
+	log.Printf("Room Code: %s, Room Master: %s", roomCode, playerName)
+
+	// Create lobby room with room master as first player
+	room := h.roomManager.CreateLobbyRoom(roomCode, playerName)
+	if room == nil {
+		log.Printf("ERROR: Failed to create lobby room")
+		h.Broadcast(roomCode, "error", map[string]interface{}{
+			"message": "Failed to create room",
+		})
+		return ""
+	}
+
+	// Add this connection to the room
+	h.mu.Lock()
+	if _, ok := h.rooms[roomCode]; !ok {
+		h.rooms[roomCode] = make(map[*websocket.Conn]struct{})
+	}
+	h.rooms[roomCode][conn] = struct{}{}
+
+	// Remove from old room if it existed
+	if *currentRoom != "" && *currentRoom != roomCode {
+		delete(h.rooms[*currentRoom], conn)
+	}
+	h.mu.Unlock()
+
+	// Broadcast room created confirmation
+	h.Broadcast(roomCode, "room_created", map[string]interface{}{
+		"room_code": roomCode,
+		"status":    "lobby",
+	})
+
+	log.Printf("SUCCESS: Lobby room created with code: %s", roomCode)
+	log.Printf("===================================")
+
+	return roomCode
 }
 
 func (h *Hub) handleBotMove(roomCode string) {
